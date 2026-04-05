@@ -91,3 +91,76 @@ export function getAllClipUrls() {
     url
   }))
 }
+
+/** Pre-built MP3s in repo /Elevenlabs (served at /audio/elevenlabs/) */
+export const BUNDLED_ELEVENLABS_TRACKS = [
+  { id: 'crisis_support', file: 'crisis_support.mp3', label: 'Crisis support' },
+  { id: 'scam_warning', file: 'scam_warning.mp3', label: 'Scam warning' },
+  { id: 'shelter_help', file: 'shelter_help.mp3', label: 'Shelter help' },
+  { id: 'how_it_works', file: 'how_it_works.mp3', label: 'How it works' },
+  { id: 'step1_welcome', file: 'step1_welcome.mp3', label: 'Welcome (step 1)' },
+  { id: 'step2_id', file: 'step2_id.mp3', label: 'ID milestone' },
+  { id: 'step4_bank', file: 'step4_bank.mp3', label: 'Banking milestone' },
+  { id: 'step5_job', file: 'step5_job.mp3', label: 'Job milestone' },
+  { id: 'step7_savings', file: 'step7_savings.mp3', label: 'Savings milestone' },
+  { id: 'step8_independence', file: 'step8_independence.mp3', label: 'Independence' },
+]
+
+export function getBundledElevenlabsUrls(baseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 3001}`) {
+  const root = baseUrl.replace(/\/$/, '')
+  return BUNDLED_ELEVENLABS_TRACKS.map((t) => ({
+    ...t,
+    url: `${root}/audio/elevenlabs/${t.file}`,
+  }))
+}
+
+/** ElevenLabs character limit per request (conservative for most plans). */
+export const MAX_TTS_CHARS = 2500
+
+/**
+ * Convert plain text to MP3 bytes via ElevenLabs (server-side only — never expose API key to clients).
+ * @param {string} text
+ * @param {{ voiceId?: string, modelId?: string, stability?: number, similarityBoost?: number }} [options]
+ * @returns {Promise<Buffer>}
+ */
+export async function synthesizeSpeech(text, options = {}) {
+  const apiKey = process.env.ELEVENLABS_API_KEY
+  const voiceId = options.voiceId || process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'
+
+  if (!apiKey || apiKey === 'your_elevenlabs_api_key') {
+    throw new Error('ELEVENLABS_API_KEY is not configured on the server')
+  }
+
+  const trimmed = String(text ?? '').trim()
+  if (!trimmed) throw new Error('text is required')
+  if (trimmed.length > MAX_TTS_CHARS) {
+    throw new Error(`text must be at most ${MAX_TTS_CHARS} characters`)
+  }
+
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
+      },
+      body: JSON.stringify({
+        text: trimmed,
+        model_id: options.modelId || 'eleven_turbo_v2_5',
+        voice_settings: {
+          stability: options.stability ?? 0.5,
+          similarity_boost: options.similarityBoost ?? 0.75,
+        },
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`ElevenLabs error ${response.status}: ${errText.slice(0, 300)}`)
+  }
+
+  return Buffer.from(await response.arrayBuffer())
+}

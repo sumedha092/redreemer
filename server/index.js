@@ -31,8 +31,10 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Serve static voice clips
+// Serve generated milestone clips (public/clips/*.mp3)
 app.use('/clips', express.static(path.join(__dirname, 'public/clips')))
+// Bundled ElevenLabs demos (repo /Elevenlabs) — crisis, shelter, steps, etc.
+app.use('/audio/elevenlabs', express.static(path.join(__dirname, '../Elevenlabs')))
 
 // Feature 10: Rate limiting for SMS endpoint
 const smsLimiter = rateLimit({

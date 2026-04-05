@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Routes, Route } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from '@/context/AuthContext';
 import CaseworkerDashboard from './dashboards/CaseworkerDashboard';
 import ClientDashboard from './dashboards/ClientDashboard';
+import Dashboard from './Dashboard';
 
 export default function DashboardRouter() {
   const { isAuthenticated, isLoading } = useAuth0();
@@ -24,7 +25,14 @@ export default function DashboardRouter() {
 
   if (!isAuthenticated) return null;
 
-  if (userType === 'caseworker') return <CaseworkerDashboard />;
+  if (userType === 'caseworker') {
+    return (
+      <Routes>
+        <Route index element={<CaseworkerDashboard />} />
+        <Route path="clients" element={<Dashboard />} />
+      </Routes>
+    );
+  }
   if (userType === 'homeless' || userType === 'reentry') return <ClientDashboard />;
 
   // No user type set — redirect to signup to choose

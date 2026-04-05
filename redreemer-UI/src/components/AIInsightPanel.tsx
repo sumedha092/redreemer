@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw, AlertTriangle, TrendingUp, Lightbulb, Shield, AlertCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { emitAIAlert } from '@/lib/aiAlertBus';
 
 interface Props {
   tool: 'emergency' | 'budget' | 'debt' | 'risk' | 'networth' | 'goals';
@@ -30,25 +31,28 @@ export default function AIInsightPanel({ tool, data, className = '', onAlert }: 
       setState('done');
 
       // Fire alerts for high-risk conditions (only once per session per level)
-      if (onAlert) {
-        const alertKey = `${tool}-${ins.riskLevel || ins.trend || ''}`;
-        if (!alertedRef.current.has(alertKey)) {
-          if (tool === 'emergency' && ins.riskLevel === 'high') {
-            onAlert(`Emergency fund at HIGH risk — ${ins.prediction}`, 'danger');
-            alertedRef.current.add(alertKey);
-          } else if (tool === 'emergency' && ins.riskLevel === 'medium') {
-            onAlert(`Emergency fund needs attention — ${ins.recommendation}`, 'warning');
-            alertedRef.current.add(alertKey);
-          } else if (tool === 'budget' && Number(ins.score) < 40) {
-            onAlert(`Budget health is low (${ins.score}/100) — ${ins.topIssue}`, 'warning');
-            alertedRef.current.add(alertKey);
-          } else if (tool === 'risk' && ins.trend === 'declining') {
-            onAlert(`Financial risk is increasing — ${ins.topRisk}`, 'danger');
-            alertedRef.current.add(alertKey);
-          } else if (tool === 'debt' && ins.riskFlag && ins.riskFlag !== 'null') {
-            onAlert(`Debt alert: ${ins.riskFlag}`, 'warning');
-            alertedRef.current.add(alertKey);
-          }
+      const fire = (message: string, level: 'warning' | 'danger') => {
+        onAlert?.(message, level);
+        emitAIAlert(tool, level === 'danger' ? 'high' : 'medium', message);
+      };
+
+      const alertKey = `${tool}-${ins.riskLevel || ins.trend || ''}`;
+      if (!alertedRef.current.has(alertKey)) {
+        if (tool === 'emergency' && ins.riskLevel === 'high') {
+          fire(`Emergency fund at HIGH risk — ${ins.prediction}`, 'danger');
+          alertedRef.current.add(alertKey);
+        } else if (tool === 'emergency' && ins.riskLevel === 'medium') {
+          fire(`Emergency fund needs attention — ${ins.recommendation}`, 'warning');
+          alertedRef.current.add(alertKey);
+        } else if (tool === 'budget' && Number(ins.score) < 40) {
+          fire(`Budget health is low (${ins.score}/100) — ${ins.topIssue}`, 'warning');
+          alertedRef.current.add(alertKey);
+        } else if (tool === 'risk' && ins.trend === 'declining') {
+          fire(`Financial risk is increasing — ${ins.topRisk}`, 'danger');
+          alertedRef.current.add(alertKey);
+        } else if (tool === 'debt' && ins.riskFlag && ins.riskFlag !== 'null') {
+          fire(`Debt alert: ${ins.riskFlag}`, 'warning');
+          alertedRef.current.add(alertKey);
         }
       }
     } catch (err: any) {

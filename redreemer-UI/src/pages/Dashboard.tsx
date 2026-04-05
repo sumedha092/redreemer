@@ -3,7 +3,7 @@ import {
   Users, BarChart2, Wallet, LogOut, Search, UserPlus, AlertTriangle,
   MessageSquare, Phone, Download, ChevronRight, Play, Pause, Bell,
   Sun, Moon, X, Award, BookOpen, CheckCircle, Clock, TrendingUp,
-  Shield, Target, Activity, ShieldCheck, RotateCcw
+  Shield, Target, Activity, ShieldCheck, RotateCcw, Home
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useAnalytics, useSendMessage, useUpdateStep, useAddClient, useCrisisAlerts, useRunDemo } from '@/hooks/useClients';
@@ -12,6 +12,9 @@ import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import Logo from '@/components/Logo';
 import PhoneSimulator from '@/components/PhoneSimulator';
+import ReplySpeechButton from '@/components/ReplySpeechButton';
+import { API_BASE } from '@/lib/apiBase';
+import { useAuth } from '@/context/AuthContext';
 
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true';
 
@@ -206,66 +209,239 @@ function AddClientModal({ open, onClose, onAdd }: { open: boolean; onClose: () =
   );
 }
 
-// ── Voice Player ─────────────────────────────────────────────────────────────
+const ELEVENLABS_BASE = `${API_BASE}/audio/elevenlabs`;
+
+/** Milestone steps 2/4/6/8 → files in repo /Elevenlabs (served at /audio/elevenlabs/). */
+function milestoneAudioUrl(stepNum: number): string | null {
+  const map: Record<number, string> = {
+    2: 'step2_id.mp3',
+    4: 'step4_bank.mp3',
+    6: 'step7_savings.mp3',
+    8: 'step8_independence.mp3',
+  };
+  const file = map[stepNum];
+  return file ? `${ELEVENLABS_BASE}/${file}` : null;
+}
+
+/** Same catalog as server/services/elevenlabs.js BUNDLED_ELEVENLABS_TRACKS (10 files). */
+const ELEVENLABS_SAFETY: { id: string; label: string; file: string }[] = [
+  { id: 'shelter_help', label: 'Shelter help', file: 'shelter_help.mp3' },
+  { id: 'crisis_support', label: 'Crisis support', file: 'crisis_support.mp3' },
+  { id: 'scam_warning', label: 'Scam warning', file: 'scam_warning.mp3' },
+  { id: 'how_it_works', label: 'How it works', file: 'how_it_works.mp3' },
+];
+
+const ELEVENLABS_JOURNEY_EXTRA: { id: string; label: string; file: string }[] = [
+  { id: 'step1_welcome', label: 'Welcome (step 1)', file: 'step1_welcome.mp3' },
+  { id: 'step5_job', label: 'Job readiness (step 5)', file: 'step5_job.mp3' },
+];
+
+// ── Voice Player (real ElevenLabs MP3s from API server) ─────────────────────
 function VoicePlayer({ stepLogs }: { stepLogs: StepLog[] }) {
+  const milestones = stepLogs.filter(l => [2, 4, 6, 8].includes(l.step_number));
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const milestones = stepLogs.filter(l => [2, 4, 6, 8].includes(l.step_number));
+  const [duration, setDuration] = useState(0);
   const [activeClip, setActiveClip] = useState(milestones[0]?.step_number || 0);
+  const [mode, setMode] = useState<'milestone' | 'library'>(() =>
+    milestones.length ? 'milestone' : 'library'
+  );
+  const [libraryFile, setLibraryFile] = useState<string | null>(() =>
+    milestones.length ? null : ELEVENLABS_SAFETY[0]?.file ?? null
+  );
+  const [loadError, setLoadError] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const milestoneLabels: Record<number, string> = {
     2: 'First Safe Night', 4: 'Stability Achieved', 6: 'Financial Foundations', 8: 'Full Independence'
   };
 
-  function togglePlay() {
-    if (playing) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+  const currentSrc =
+    mode === 'library' && libraryFile
+      ? `${ELEVENLABS_BASE}/${libraryFile}`
+      : milestoneAudioUrl(activeClip);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a || !currentSrc) return;
+    setLoadError(false);
+    a.pause();
+    a.src = currentSrc;
+    a.load();
+    setPlaying(false);
+    setElapsed(0);
+    setDuration(0);
+  }, [currentSrc, activeClip, mode, libraryFile]);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    const onMeta = () => {
+      setLoadError(false);
+      setDuration(a.duration || 0);
+    };
+    const onErr = () => setLoadError(true);
+    const onEnded = () => {
       setPlaying(false);
+      setElapsed(0);
+      if (tickRef.current) clearInterval(tickRef.current);
+    };
+    a.addEventListener('loadedmetadata', onMeta);
+    a.addEventListener('error', onErr);
+    a.addEventListener('ended', onEnded);
+    return () => {
+      a.removeEventListener('loadedmetadata', onMeta);
+      a.removeEventListener('error', onErr);
+      a.removeEventListener('ended', onEnded);
+    };
+  }, [currentSrc]);
+
+  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
+
+  async function togglePlay() {
+    const a = audioRef.current;
+    if (!a || !currentSrc) return;
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+      if (tickRef.current) clearInterval(tickRef.current);
     } else {
-      setPlaying(true);
-      intervalRef.current = setInterval(() => {
-        setElapsed(e => {
-          if (e >= 30) { clearInterval(intervalRef.current!); setPlaying(false); return 0; }
-          return e + 1;
-        });
-      }, 1000);
+      try {
+        await a.play();
+        setPlaying(true);
+        if (tickRef.current) clearInterval(tickRef.current);
+        tickRef.current = setInterval(() => {
+          setElapsed(Math.floor(a.currentTime || 0));
+        }, 250);
+      } catch {
+        setPlaying(false);
+      }
     }
   }
 
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
-
-  if (milestones.length === 0) return null;
-
   return (
-    <div className="glass-card !p-5 guardian-card">
-      <h3 className="font-heading font-semibold text-sm text-foreground mb-3">Milestone Voice Messages</h3>
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {milestones.map(l => (
-          <button key={l.step_number} onClick={() => { setActiveClip(l.step_number); setElapsed(0); setPlaying(false); }}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${activeClip === l.step_number ? 'bg-indigo-600 text-white border-indigo-600' : 'border-border text-muted-foreground hover:text-foreground'}`}>
-            Step {l.step_number}: {milestoneLabels[l.step_number] || `Milestone`}
-          </button>
-        ))}
+    <div className="glass-card !p-5 guardian-card space-y-4">
+      <div>
+        <h3 className="font-heading font-semibold text-sm text-foreground mb-1">Voice guidance</h3>
+        <p className="text-xs text-muted-foreground">
+          ElevenLabs MP3s are served at{' '}
+          <code className="text-[10px] bg-muted px-1 rounded">/audio/elevenlabs</code>
+          {API_BASE ? ` on ${API_BASE}` : ' (dev: Vite proxies to the API on port 3001).'} Keep the Redreemer server running.
+        </p>
       </div>
-      <div className="flex items-center gap-4">
-        <button onClick={togglePlay} className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors flex-shrink-0">
-          {playing ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
-        </button>
-        <div className="flex-1">
-          <div className="flex gap-0.5 h-8 items-center">
-            {Array.from({ length: 24 }, (_, i) => (
-              <div key={i} className={`w-1 rounded-full transition-all ${playing ? 'bg-indigo-500' : 'bg-muted'}`}
-                style={{ height: playing ? `${20 + Math.sin(i * 0.8 + elapsed * 0.5) * 12}px` : '8px',
-                  animation: playing ? `waveform ${0.4 + (i % 3) * 0.2}s ease-in-out infinite` : 'none',
-                  animationDelay: `${i * 0.05}s` }} />
+
+      {milestones.length > 0 && (
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Journey milestones</p>
+          <div className="flex gap-2 flex-wrap">
+            {milestones.map(l => (
+              <button
+                key={l.step_number}
+                type="button"
+                onClick={() => {
+                  setMode('milestone');
+                  setLibraryFile(null);
+                  setActiveClip(l.step_number);
+                  setPlaying(false);
+                  setElapsed(0);
+                }}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${mode === 'milestone' && activeClip === l.step_number ? 'bg-indigo-600 text-white border-indigo-600' : 'border-border text-muted-foreground hover:text-foreground'}`}
+              >
+                Step {l.step_number}: {milestoneLabels[l.step_number] || 'Milestone'}
+              </button>
             ))}
           </div>
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>{elapsed}s</span><span>30s</span>
-          </div>
+        </div>
+      )}
+
+      <div>
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">Training &amp; safety</p>
+        <div className="flex gap-2 flex-wrap">
+          {ELEVENLABS_SAFETY.map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              onClick={() => {
+                setMode('library');
+                setLibraryFile(e.file);
+                setPlaying(false);
+                setElapsed(0);
+              }}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${mode === 'library' && libraryFile === e.file ? 'bg-amber-500/20 text-amber-800 dark:text-amber-200 border-amber-500/50' : 'border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              {e.label}
+            </button>
+          ))}
         </div>
       </div>
+
+      <div>
+        <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-2">More journey audio</p>
+        <div className="flex gap-2 flex-wrap">
+          {ELEVENLABS_JOURNEY_EXTRA.map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              onClick={() => {
+                setMode('library');
+                setLibraryFile(e.file);
+                setPlaying(false);
+                setElapsed(0);
+              }}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${mode === 'library' && libraryFile === e.file ? 'bg-violet-500/20 text-violet-800 dark:text-violet-200 border-violet-500/50' : 'border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              {e.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {!currentSrc ? (
+        <p className="text-xs text-muted-foreground">No audio mapped for this selection.</p>
+      ) : (
+        <>
+          <audio ref={audioRef} className="hidden" preload="metadata" />
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={togglePlay}
+              disabled={!currentSrc}
+              className="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center transition-colors flex-shrink-0 disabled:opacity-40"
+            >
+              {playing ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
+            </button>
+            <div className="flex-1 min-w-0">
+              {loadError ? (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Could not load this track. Put the matching <code className="text-[10px]">.mp3</code> in{' '}
+                  <code className="text-[10px]">Elevenlabs/</code> and ensure the API is running.
+                </p>
+              ) : (
+                <>
+                  <div className="flex gap-0.5 h-8 items-center">
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <div
+                        key={i}
+                        className={`w-1 rounded-full transition-all ${playing ? 'bg-indigo-500' : 'bg-muted'}`}
+                        style={{
+                          height: playing ? `${12 + Math.sin(i * 0.8 + elapsed * 0.5) * 10}px` : '8px',
+                          animation: playing ? `waveform ${0.4 + (i % 3) * 0.2}s ease-in-out infinite` : 'none',
+                          animationDelay: `${i * 0.05}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>{elapsed}s</span>
+                    <span>{duration && !Number.isNaN(duration) ? `${Math.round(duration)}s` : '—'}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -475,6 +651,8 @@ function ClientDetailView({ client, useMock, onStepChange }: { client: Client; u
         )}
       </div>
 
+      <VoicePlayer stepLogs={client.stepLogs} />
+
       {/* Conversations */}
       <div className="glass-card !p-5 guardian-card">
         <h3 className="font-heading font-semibold text-sm text-foreground mb-3">Recent Conversations</h3>
@@ -489,8 +667,22 @@ function ClientDetailView({ client, useMock, onStepChange }: { client: Client; u
               <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-tr-md' : 'glass text-foreground rounded-tl-md'}`}>
                   {msg.content}
-                  <div className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-white/60' : 'text-muted-foreground'}`}>
-                    {new Date(msg.created_at).toLocaleString()}
+                  <div
+                    className={`mt-1 flex items-center gap-2 text-[10px] ${
+                      msg.role === 'user' ? 'justify-end' : 'justify-between text-muted-foreground'
+                    }`}
+                  >
+                    {msg.role === 'user' ? (
+                      <>
+                        <span className="text-white/60">{new Date(msg.created_at).toLocaleString()}</span>
+                        <ReplySpeechButton text={msg.content} variant="dashboardUser" listenLabel="Listen" />
+                      </>
+                    ) : (
+                      <>
+                        <ReplySpeechButton text={msg.content} variant="dashboard" listenLabel="Listen" />
+                        <span>{new Date(msg.created_at).toLocaleString()}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -502,9 +694,10 @@ function ClientDetailView({ client, useMock, onStepChange }: { client: Client; u
       {/* Message Composer */}
       <div className="glass-card !p-5 guardian-card">
         <h3 className="font-heading font-semibold text-sm text-foreground mb-3">Send Message</h3>
-        <form onSubmit={handleSend} className="flex gap-2">
+        <form onSubmit={handleSend} className="flex flex-wrap items-center gap-2">
           <input value={message} onChange={e => setMessage(e.target.value)} placeholder="Type a message to send via SMS..."
-            className="flex-1 px-4 py-2.5 rounded-lg bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+            className="flex-1 min-w-[160px] px-4 py-2.5 rounded-lg bg-muted border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+          <ReplySpeechButton text={message} variant="dashboard" listenLabel="Hear draft" className="py-2.5 px-2" />
           <button type="submit" disabled={sendMessage.isPending}
             className="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium flex items-center gap-2 disabled:opacity-60 transition-colors">
             <Phone size={16} /> {sendMessage.isPending ? '...' : 'Send'}
@@ -512,7 +705,6 @@ function ClientDetailView({ client, useMock, onStepChange }: { client: Client; u
         </form>
       </div>
 
-      <VoicePlayer stepLogs={client.stepLogs} />
       <JourneyTimeline client={client} />
       <CaseworkerNotes clientId={client.id} />
 
@@ -644,6 +836,7 @@ function AnalyticsView({ clients, useMock, onNavigateClients }: { clients: Clien
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { userType } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState<'clients' | 'analytics' | 'wellness'>('clients');
   const [selectedClientId, setSelectedClientId] = useState<string>('1');
@@ -687,6 +880,16 @@ export default function Dashboard() {
           <Logo size="sm" />
         </div>
         <nav className="flex-1 px-3 space-y-1">
+          {userType === 'caseworker' && (
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-muted-foreground hover:text-foreground hover:bg-muted/50 mb-1"
+            >
+              <Home size={16} />
+              Overview
+            </button>
+          )}
           {([
             { id: 'clients' as const, icon: Users, label: 'Clients' },
             { id: 'analytics' as const, icon: BarChart2, label: 'Analytics' },

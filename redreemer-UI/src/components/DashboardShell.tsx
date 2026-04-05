@@ -1,7 +1,7 @@
 import { useState, ReactNode, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
-import { onAIAlert } from '@/components/AIInsightPanel';
+import { onAIAlert } from '@/lib/aiAlertBus';
 import {
   Bell, Search, Settings, HelpCircle, LogOut, User,
   X, ChevronRight, Menu, Home, AlertTriangle
