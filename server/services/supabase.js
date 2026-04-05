@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
+import { hashPhone } from '../utils/privacy.js'
 dotenv.config()
 
 export const supabase = createClient(
@@ -19,7 +20,7 @@ export async function getUserByPhone(phone) {
 export async function createUser(phone) {
   const { data, error } = await supabase
     .from('users')
-    .insert({ phone_number: phone, current_step: 1 })
+    .insert({ phone_number: phone, current_step: 1, phone_hash: hashPhone(phone) })
     .select()
     .single()
   if (error) throw error
@@ -217,4 +218,46 @@ export async function getDistinctHomelessCities() {
   if (error) throw error
   const cities = [...new Set((data || []).map(u => u.city))]
   return cities
+}
+
+// Feature 1: Crisis alerts
+export async function getCrisisAlerts() {
+  const { data, error } = await supabase
+    .from('crisis_alerts')
+    .select('*')
+    .eq('resolved', false)
+    .order('triggered_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+export async function resolveCrisisAlert(id, resolvedBy) {
+  const { data, error } = await supabase
+    .from('crisis_alerts')
+    .update({ resolved: true, resolved_at: new Date().toISOString(), resolved_by: resolvedBy })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// Feature 2: Opt-out
+export async function setOptedOut(userId, value) {
+  const update = { opted_out: value }
+  if (value) update.opted_out_at = new Date().toISOString()
+  const { error } = await supabase
+    .from('users')
+    .update(update)
+    .eq('id', userId)
+  if (error) throw error
+}
+
+// Feature 4: Language preference
+export async function updatePreferredLanguage(userId, lang) {
+  const { error } = await supabase
+    .from('users')
+    .update({ preferred_language: lang })
+    .eq('id', userId)
+  if (error) throw error
 }

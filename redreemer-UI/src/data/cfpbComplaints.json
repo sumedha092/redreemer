@@ -1,0 +1,12 @@
+[
+  { "product": "Mortgage", "count": 1842, "top_issue": "Trouble during payment process" },
+  { "product": "Credit card", "count": 1456, "top_issue": "Billing disputes" },
+  { "product": "Debt collection", "count": 1389, "top_issue": "Attempts to collect debt not owed" },
+  { "product": "Credit reporting", "count": 1274, "top_issue": "Incorrect information on report" },
+  { "product": "Checking/savings", "count": 987, "top_issue": "Managing an account" },
+  { "product": "Student loan", "count": 743, "top_issue": "Dealing with lender" },
+  { "product": "Payday loan", "count": 612, "top_issue": "Charged unexpected fees" },
+  { "product": "Vehicle loan", "count": 534, "top_issue": "Problems with payment" },
+  { "product": "Personal loan", "count": 421, "top_issue": "Getting a loan" },
+  { "product": "Money transfer", "count": 318, "top_issue": "Fraud or scam" }
+]

@@ -1,0 +1,17 @@
+[
+  { "zipcode": "85031", "name": "Phoenix (West)", "median_household_income": 28450 },
+  { "zipcode": "85040", "name": "Phoenix (South)", "median_household_income": 29870 },
+  { "zipcode": "85009", "name": "Phoenix (Central West)", "median_household_income": 30120 },
+  { "zipcode": "85033", "name": "Phoenix (Maryvale)", "median_household_income": 31540 },
+  { "zipcode": "85706", "name": "Tucson (South)", "median_household_income": 32100 },
+  { "zipcode": "85713", "name": "Tucson (Central)", "median_household_income": 33250 },
+  { "zipcode": "85364", "name": "Yuma", "median_household_income": 34100 },
+  { "zipcode": "85635", "name": "Sierra Vista", "median_household_income": 34800 },
+  { "zipcode": "85901", "name": "Show Low", "median_household_income": 35600 },
+  { "zipcode": "86401", "name": "Kingman", "median_household_income": 36200 },
+  { "zipcode": "85203", "name": "Mesa (Central)", "median_household_income": 38900 },
+  { "zipcode": "85281", "name": "Tempe", "median_household_income": 42300 },
+  { "zipcode": "85251", "name": "Scottsdale (South)", "median_household_income": 58700 },
+  { "zipcode": "85254", "name": "Scottsdale (North)", "median_household_income": 89400 },
+  { "zipcode": "85255", "name": "Scottsdale (Far North)", "median_household_income": 112000 }
+]

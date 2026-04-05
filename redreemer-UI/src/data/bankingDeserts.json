@@ -1,0 +1,12 @@
+[
+  { "name": "Wells Fargo Bank", "city": "Phoenix", "zipcode": "85001", "latitude": 33.4484, "longitude": -112.0740 },
+  { "name": "Chase Bank", "city": "Phoenix", "zipcode": "85003", "latitude": 33.4500, "longitude": -112.0667 },
+  { "name": "Bank of America", "city": "Tucson", "zipcode": "85701", "latitude": 32.2226, "longitude": -110.9747 },
+  { "name": "Chase Bank", "city": "Tucson", "zipcode": "85705", "latitude": 32.2412, "longitude": -110.9877 },
+  { "name": "Wells Fargo Bank", "city": "Mesa", "zipcode": "85201", "latitude": 33.4152, "longitude": -111.8315 },
+  { "name": "Desert Financial CU", "city": "Tempe", "zipcode": "85281", "latitude": 33.4255, "longitude": -111.9400 },
+  { "name": "OneAZ Credit Union", "city": "Chandler", "zipcode": "85225", "latitude": 33.3062, "longitude": -111.8413 },
+  { "name": "National Bank of AZ", "city": "Flagstaff", "zipcode": "86001", "latitude": 35.1983, "longitude": -111.6513 },
+  { "name": "Wells Fargo Bank", "city": "Scottsdale", "zipcode": "85251", "latitude": 33.4942, "longitude": -111.9261 },
+  { "name": "Chase Bank", "city": "Glendale", "zipcode": "85301", "latitude": 33.5387, "longitude": -112.1860 }
+]
