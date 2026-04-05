@@ -27,8 +27,8 @@ export default function HeroSection() {
             No app. No bank account. No address required. Just a text — and a path from the street to stability.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-10">
-            <a href="https://wa.me/14155238886?text=Hi%2C%20I%20need%20help"
+          <div className="flex flex-wrap gap-3 mb-4">
+            <a href="https://wa.me/14155238886?text=join%20redreemer"
               className="flex items-center gap-2.5 px-7 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:glow-amber transition-all">
               <Phone size={20} />
               Text +1 (415) 523-8886
@@ -40,6 +40,9 @@ export default function HeroSection() {
               Get Started <ArrowRight size={16} />
             </button>
           </div>
+          <p className="text-xs text-muted-foreground mb-8">
+            First time on WhatsApp? Send <span className="font-mono font-semibold text-foreground bg-gray-100 px-1.5 py-0.5 rounded">join redreemer</span> first to activate.
+          </p>
 
           <div className="flex flex-wrap items-center gap-5 text-xs text-muted-foreground">
             <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-accent" /> Free forever</span>
@@ -53,36 +56,36 @@ export default function HeroSection() {
         {/* Phone mockup */}
         <div className="relative hidden lg:flex justify-center">
           <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none" style={{ background: 'rgba(245,158,11,0.12)', filter: 'blur(80px)' }} />
-          <div className="relative w-[340px] rounded-[40px] border-2 border-foreground/10 bg-navy-900 overflow-hidden" style={{ animation: 'float 6s ease-in-out infinite alternate' }}>
-            <div className="flex items-center justify-center gap-2 py-4 border-b border-border">
-              <span className="font-heading font-bold text-foreground text-sm">Redreemer</span>
-              <span className="w-2 h-2 rounded-full bg-accent" />
-              <span className="text-xs text-accent">Online</span>
+          <div className="relative w-[340px] rounded-[40px] border-2 border-foreground/10 overflow-hidden" style={{ background: '#1c1c1e', animation: 'float 6s ease-in-out infinite alternate' }}>
+            <div className="flex items-center justify-center gap-2 py-4 border-b" style={{ background: '#1c1c1e', borderColor: '#3a3a3c' }}>
+              <span className="font-heading font-bold text-white text-sm">Redreemer</span>
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              <span className="text-xs text-green-400">Online</span>
             </div>
-            <div className="p-4 space-y-3 min-h-[480px]">
-              <div className="glass rounded-2xl rounded-tl-md p-3 text-sm text-foreground/90 max-w-[85%]">
+            <div className="p-4 space-y-3 min-h-[480px]" style={{ background: '#000' }}>
+              <div className="rounded-2xl rounded-tl-sm p-3 text-sm max-w-[85%]" style={{ background: '#3a3a3c', color: '#fff' }}>
                 Hey, I'm here to help. Do you have a safe place to sleep tonight?
               </div>
-              <div className="ml-auto bg-primary text-primary-foreground rounded-2xl rounded-tr-md p-3 text-sm max-w-[75%]">
+              <div className="ml-auto rounded-2xl rounded-tr-sm p-3 text-sm max-w-[75%]" style={{ background: '#0a84ff', color: '#fff' }}>
                 no im on the street in phoenix
               </div>
-              <div className="glass rounded-2xl rounded-tl-md p-3 text-sm text-foreground/90 max-w-[85%]">
+              <div className="rounded-2xl rounded-tl-sm p-3 text-sm max-w-[85%]" style={{ background: '#3a3a3c', color: '#fff' }}>
                 <p className="mb-2">Found 2 shelters open right now:</p>
                 <div className="space-y-2 text-xs">
-                  <div className="flex items-start gap-1.5"><MapPin size={12} className="text-primary mt-0.5 shrink-0" /><span>Human Services Campus<br/>204 S 12th Ave — Open 24hrs</span></div>
-                  <div className="flex items-start gap-1.5"><MapPin size={12} className="text-primary mt-0.5 shrink-0" /><span>St. Vincent de Paul<br/>420 W Watkins St — Open until midnight</span></div>
+                  <div className="flex items-start gap-1.5"><MapPin size={12} className="mt-0.5 shrink-0" style={{ color: '#f5e000' }} /><span>Human Services Campus<br/>204 S 12th Ave — Open 24hrs</span></div>
+                  <div className="flex items-start gap-1.5"><MapPin size={12} className="mt-0.5 shrink-0" style={{ color: '#f5e000' }} /><span>St. Vincent de Paul<br/>420 W Watkins St — Open until midnight</span></div>
                 </div>
                 <p className="mt-2">Can you get to either of these?</p>
               </div>
-              <div className="ml-auto bg-primary text-primary-foreground rounded-2xl rounded-tr-md p-3 text-sm max-w-[75%]">
+              <div className="ml-auto rounded-2xl rounded-tr-sm p-3 text-sm max-w-[75%]" style={{ background: '#0a84ff', color: '#fff' }}>
                 yes the first one thank you
               </div>
-              <div className="glass rounded-2xl rounded-tl-md p-3 text-sm text-foreground/90 max-w-[85%]">
+              <div className="rounded-2xl rounded-tl-sm p-3 text-sm max-w-[85%]" style={{ background: '#3a3a3c', color: '#fff' }}>
                 Great. When you get there, ask about their ID recovery program — it's your first step toward housing.
               </div>
             </div>
-            <div className="p-3 border-t border-border">
-              <div className="glass rounded-full py-2.5 px-4 text-xs text-muted-foreground">Type a message...</div>
+            <div className="p-3 border-t" style={{ background: '#1c1c1e', borderColor: '#3a3a3c' }}>
+              <div className="rounded-full py-2.5 px-4 text-xs" style={{ background: '#3a3a3c', color: '#8e8e93' }}>Type a message...</div>
             </div>
           </div>
         </div>
