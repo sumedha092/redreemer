@@ -20,13 +20,13 @@ export default function HeroSection() {
             <span className="text-foreground">Redeem your</span><br />
             <span className="text-foreground">next step.</span><br />
             <span style={{
-              background: 'linear-gradient(135deg, #f5e000 0%, #ff6b35 30%, #e040fb 60%, #00bcd4 100%)',
+              background: 'linear-gradient(90deg, #f5e000 0%, #ff6b00 60%, #e53935 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
             }}>Redream what's</span><br />
             <span style={{
-              background: 'linear-gradient(135deg, #00bcd4 0%, #e040fb 40%, #ff6b35 70%, #f5e000 100%)',
+              background: 'linear-gradient(90deg, #f5e000 0%, #ff6b00 60%, #e53935 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
