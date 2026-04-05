@@ -37,6 +37,8 @@ const ttsLimiter = rateLimit({
  * No auth required — rate limited to 20/min.
  */
 router.post('/tts', ttsLimiter, async (req, res) => {
+  // Explicitly skip JWT for this route
+  res.removeHeader('WWW-Authenticate')
   try {
     const { text } = req.body || {}
     const audio = await synthesizeSpeech(text)
@@ -344,7 +346,7 @@ router.get('/clients/:id/messages', async (req, res) => {
 
 // Apply JWT auth to all routes below this point
 router.use(checkJwt)
-// Error handler for JWT failures
+// Error handler for JWT failures — only catches UnauthorizedError from checkJwt
 router.use((err, req, res, next) => {
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({ error: 'Invalid or missing token' })
