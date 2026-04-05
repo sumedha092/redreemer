@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Volume2, Loader2 } from 'lucide-react';
-import { API_BASE } from '@/lib/apiBase';
+import { API_BASE, getNgrokSkipHeaders } from '@/lib/apiBase';
 import { useToast } from '@/components/Toast';
 
 const MAX_CHARS = 2500;
@@ -58,28 +58,45 @@ export default function ReplySpeechButton({
     window.dispatchEvent(new Event(STOP_EVENT));
     stopLocal();
 
+    if (!API_BASE && import.meta.env.PROD) {
+      toast('Speech needs VITE_API_URL pointing to your API server', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/tts`, {
+      const ttsUrl = `${API_BASE.replace(/\/$/, '')}/api/tts`;
+      const res = await fetch(ttsUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getNgrokSkipHeaders(),
+        },
         body: JSON.stringify({ text: trimmed }),
+        mode: 'cors',
       });
       const ct = res.headers.get('content-type') || '';
       if (!res.ok) {
         const err = ct.includes('application/json') ? await res.json().catch(() => ({})) : {};
         throw new Error(typeof err.error === 'string' ? err.error : `Speech failed (${res.status})`);
       }
-      if (!ct.includes('audio')) throw new Error('Server did not return audio');
+      if (ct.includes('text/html')) {
+        throw new Error(
+          'API returned a web page, not audio. Set VITE_API_URL to your Node server URL (https, no trailing slash).'
+        );
+      }
+      if (!ct.includes('audio') && !ct.includes('octet-stream')) {
+        throw new Error('Server did not return audio (check API / ElevenLabs on the server)');
+      }
 
       const buf = await res.arrayBuffer();
       const blob = new Blob([buf], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
-      blobUrlRef.current = url;
+      const objectUrl = URL.createObjectURL(blob);
+      blobUrlRef.current = objectUrl;
 
       const a = audioRef.current;
       if (!a) return;
-      a.src = url;
+      a.src = objectUrl;
       a.onended = () => setPlaying(false);
       a.onerror = () => { setPlaying(false); toast('Could not play audio', 'error'); };
       await a.play();

@@ -26,8 +26,15 @@ const app = express()
 // Trust proxy headers from ngrok
 app.set('trust proxy', 1)
 
-// Middleware
-app.use(cors())
+// Middleware — reflect Origin (Vercel + localhost) and allow ngrok’s skip header on preflight
+app.use(
+  cors({
+    origin: true,
+    credentials: false,
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  })
+)
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -61,7 +68,7 @@ app.post('/api/tts', async (req, res) => {
   }
 })
 
-// Routes
+// Routes — Twilio webhook (production): POST /sms/incoming (POST /api/sms/incoming is on api router)
 app.use('/sms', smsLimiter, smsRoutes)
 app.use('/api', apiRoutes)
 

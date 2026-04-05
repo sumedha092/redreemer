@@ -105,8 +105,10 @@ export const MAX_TTS_CHARS = 2500
  * @returns {Promise<Buffer>}
  */
 export async function synthesizeSpeech(text, options = {}) {
-  const apiKey = process.env.ELEVENLABS_API_KEY
-  const voiceId = options.voiceId || process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'
+  const apiKey = (process.env.ELEVENLABS_API_KEY || '').trim()
+  const voiceId = (options.voiceId || process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM').trim()
+  const primaryModel = (options.modelId || process.env.ELEVENLABS_MODEL_ID || 'eleven_turbo_v2_5').trim()
+  const fallbackModel = 'eleven_multilingual_v2'
 
   if (!apiKey || apiKey === 'your_elevenlabs_api_key') {
     throw new Error('ELEVENLABS_API_KEY is not configured on the server')
@@ -118,9 +120,8 @@ export async function synthesizeSpeech(text, options = {}) {
     throw new Error(`text must be at most ${MAX_TTS_CHARS} characters`)
   }
 
-  const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
+  async function ttsRequest(modelId) {
+    return fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
@@ -129,14 +130,26 @@ export async function synthesizeSpeech(text, options = {}) {
       },
       body: JSON.stringify({
         text: trimmed,
-        model_id: options.modelId || 'eleven_turbo_v2_5',
+        model_id: modelId,
         voice_settings: {
           stability: options.stability ?? 0.5,
           similarity_boost: options.similarityBoost ?? 0.75,
         },
       }),
+    })
+  }
+
+  let response = await ttsRequest(primaryModel)
+  if (!response.ok && primaryModel !== fallbackModel) {
+    const status = response.status
+    const errSnippet = await response.text()
+    if (status === 400 || status === 404 || status === 422) {
+      console.warn('[ElevenLabs] model', primaryModel, 'failed, retrying', fallbackModel, errSnippet.slice(0, 160))
+      response = await ttsRequest(fallbackModel)
+    } else {
+      throw new Error(`ElevenLabs error ${status}: ${errSnippet.slice(0, 300)}`)
     }
-  )
+  }
 
   if (!response.ok) {
     const errText = await response.text()

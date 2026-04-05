@@ -1,5 +1,6 @@
 import { useState, useMemo, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Wallet, Shield, TrendingDown, Target, BookOpen, Activity, ShieldCheck,
   BarChart2, ChevronRight, ExternalLink, AlertTriangle,
@@ -8,25 +9,27 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import Logo from '@/components/Logo';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import LanguageMenu from '@/components/LanguageMenu';
 import DataInsights from '@/components/DataInsights';
 import AIInsightPanel from '@/components/AIInsightPanel';
 import { useAIAlerts } from '@/context/AIAlertContext';
 
 // ── Tab definitions ──────────────────────────────────────────────────────────
 
-const TABS = [
-  { id: 'budget',    label: 'Budget',           Icon: Wallet },
-  { id: 'networth',  label: 'Net Worth',         Icon: BarChart2 },
-  { id: 'emergency', label: 'Emergency Fund',    Icon: Shield },
-  { id: 'debt',      label: 'Debt Payoff',       Icon: TrendingDown },
-  { id: 'insurance', label: 'Insurance',         Icon: ShieldCheck },
-  { id: 'goals',     label: 'Savings Goals',     Icon: Target },
-  { id: 'risk',      label: 'Risk Score',        Icon: Activity },
-  { id: 'learn',     label: 'Learn',             Icon: BookOpen },
-  { id: 'community', label: 'Community Data',    Icon: Database },
+const TAB_DEFS = [
+  { id: 'budget',    labelKey: 'wellness.tabBudget',    Icon: Wallet },
+  { id: 'networth',  labelKey: 'wellness.tabNetworth',  Icon: BarChart2 },
+  { id: 'emergency', labelKey: 'wellness.tabEmergency', Icon: Shield },
+  { id: 'debt',      labelKey: 'wellness.tabDebt',      Icon: TrendingDown },
+  { id: 'insurance', labelKey: 'wellness.tabInsurance', Icon: ShieldCheck },
+  { id: 'goals',     labelKey: 'wellness.tabGoals',     Icon: Target },
+  { id: 'risk',      labelKey: 'wellness.tabRisk',      Icon: Activity },
+  { id: 'learn',     labelKey: 'wellness.tabLearn',     Icon: BookOpen },
+  { id: 'community', labelKey: 'wellness.tabCommunity', Icon: Database },
 ] as const;
 
-type TabId = typeof TABS[number]['id'];
+type TabId = typeof TAB_DEFS[number]['id'];
 
 // ── Embeddable content (used by ClientDashboard) ─────────────────────────────
 
@@ -49,51 +52,56 @@ export function WellnessContent({ tool }: { tool: string }) {
 // ── Main page ────────────────────────────────────────────────────────────────
 
 export default function FinancialWellness() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('budget');
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Flourish header */}
-      <div className="border-b border-border px-6 py-5" style={{ background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)' }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
+      <div className="border-b border-border px-4 sm:px-6 py-5" style={{ background: 'linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%)' }}>
+        <div className="max-w-6xl mx-auto flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-              <button onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">Dashboard</button>
+              <button type="button" onClick={() => navigate('/dashboard')} className="hover:text-foreground transition-colors">{t('wellness.crumbDashboard')}</button>
               <ChevronRight size={12} />
-              <span className="text-emerald-400">Financial Wellness</span>
+              <span className="text-emerald-400">{t('wellness.crumbCurrent')}</span>
             </div>
             <div className="flex items-center gap-3 mb-1">
               <Logo size="sm" />
             </div>
             <h1 className="font-heading font-bold text-2xl text-foreground mt-2">
-              Financial Wellness Suite
+              {t('wellness.title')}
               <span className="block w-16 h-[3px] rounded-full mt-1" style={{ background: 'linear-gradient(90deg, #10B981, #059669)' }} />
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">Empowering financial confidence at every stage of the journey</p>
+            <p className="text-muted-foreground text-sm mt-1">{t('wellness.subtitle')}</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
+            <ThemeToggle />
+            <LanguageMenu showCurrentLabel={false} align="right" />
           </div>
         </div>
       </div>
 
       {/* Tab nav — Flourish emerald */}
       <div className="border-b border-border overflow-x-auto">
-        <div className="max-w-6xl mx-auto px-6 flex gap-1 py-2">
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex gap-1 py-2">
+          {TAB_DEFS.map((tab) => (
+            <button type="button" key={tab.id} onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'bg-emerald-600 text-white'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}>
               <tab.Icon size={14} />
-              <span>{tab.label}</span>
+              <span>{t(tab.labelKey)}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {activeTab === 'budget'    && <BudgetTracker />}
         {activeTab === 'networth'  && <NetWorth />}
         {activeTab === 'emergency' && <EmergencyFund />}

@@ -239,6 +239,16 @@ describe('POST /sms/incoming', () => {
   })
 })
 
+describe('POST /api/sms/incoming', () => {
+  it('same handler as /sms/incoming (for Vite /api proxy + production API base)', async () => {
+    const ts = Date.now().toString().slice(-6)
+    const { status } = await postForm('/api/sms/incoming', {
+      From: `+1555${ts}8`, Body: 'ping', To: '+14155238886',
+    })
+    expect(status).toBe(200)
+  })
+})
+
 // ── Protected endpoints return 401 without token ──────────────────────────────
 describe('Protected endpoints (no auth)', () => {
   it('GET /api/clients returns 401', async () => {

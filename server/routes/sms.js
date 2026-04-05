@@ -94,9 +94,9 @@ async function sendMultiSMS(phone, messages) {
 }
 
 /**
- * POST /sms/incoming — Twilio webhook
+ * POST /sms/incoming — Twilio webhook (also mounted at POST /api/sms/incoming for browser/proxy).
  */
-async function handleIncoming(req, res) {
+export async function handleIncoming(req, res) {
   // Twilio expects a 200 response immediately
   res.sendStatus(200)
 

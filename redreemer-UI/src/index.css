@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Light mode only ─────────────────────────────────────────────────────── */
+/* ── Light mode ──────────────────────────────────────────────────────────── */
 :root {
   --background: 0 0% 100%;
   --foreground: 222 47% 8%;
@@ -32,30 +32,43 @@
   --lemon-glow: 0 0 24px rgba(250,210,0,0.35);
   --indigo-glow: 0 0 20px rgba(99,102,241,0.2);
   --emerald-glow: 0 0 20px rgba(16,185,129,0.2);
-
-  --text-primary: #111827;
-  --text-muted: #6B7280;
 }
 
-/* Force light mode always */
-html { color-scheme: light; }
-html.dark, [data-theme="dark"] {
-  --background: 0 0% 100%;
-  --foreground: 222 47% 8%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 8%;
-  --muted: 220 14% 94%;
-  --muted-foreground: 220 9% 40%;
-  --border: 220 13% 88%;
-  --input: 220 13% 88%;
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 6%;
+  --foreground: 210 20% 95%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 20% 95%;
+  --popover: 222 47% 9%;
+  --popover-foreground: 210 20% 95%;
+  --primary: 54 100% 47%;
+  --primary-foreground: 222 47% 8%;
+  --secondary: 239 84% 67%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 222 30% 14%;
+  --muted-foreground: 215 16% 55%;
+  --accent: 160 84% 35%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 30% 18%;
+  --input: 222 30% 18%;
+  --ring: 54 100% 47%;
+
+  --glass-border: 222 30% 18%;
+  --lemon-glow: 0 0 24px rgba(250,210,0,0.25);
+  --indigo-glow: 0 0 20px rgba(99,102,241,0.3);
+  --emerald-glow: 0 0 20px rgba(16,185,129,0.3);
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────── */
 @layer base {
   * { @apply border-border; }
   html { scroll-behavior: smooth; }
-  body { @apply bg-white text-gray-900 font-body antialiased; }
-  h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; color: #111827; }
+  body { @apply bg-background text-foreground font-body antialiased transition-colors duration-200; }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
 }
 
 /* ── Utilities ───────────────────────────────────────────────────────────── */
@@ -85,22 +98,35 @@ html.dark, [data-theme="dark"] {
     background-image: linear-gradient(135deg, #10B981, #059669);
   }
 
+  /* Glass — adapts to dark mode */
   .glass {
     background: rgba(255,255,255,0.9);
     border: 1px solid hsl(var(--border));
     backdrop-filter: blur(12px);
   }
+  .dark .glass {
+    background: rgba(15,23,42,0.85);
+  }
+
+  /* Glass card — adapts to dark mode */
   .glass-card {
-    background: #ffffff;
+    background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
     border-radius: 16px;
     padding: 24px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    transition: box-shadow 200ms;
+    transition: box-shadow 200ms, background 200ms;
+  }
+  .dark .glass-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
   }
   .glass-card:hover {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   }
+  .dark .glass-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
   .guardian-card:hover { box-shadow: var(--indigo-glow); }
   .flourish-card:hover { box-shadow: var(--emerald-glow); }
   .glow-lemon { box-shadow: var(--lemon-glow); }
@@ -111,9 +137,15 @@ html.dark, [data-theme="dark"] {
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+  .dark .dot-grid {
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+  }
   .grain { position: relative; }
-  .skeleton { @apply bg-gray-100 animate-pulse rounded-lg; }
+  .skeleton { @apply bg-muted animate-pulse rounded-lg; }
   .view-enter { animation: viewEnter 200ms ease-out forwards; }
+
+  /* Mobile touch targets */
+  .touch-target { min-height: 44px; min-width: 44px; }
 }
 
 /* ── Keyframes ───────────────────────────────────────────────────────────── */

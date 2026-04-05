@@ -1,10 +1,12 @@
 import { Phone, MessageSquare, X, Heart } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   onClose: () => void;
 }
 
 export default function CrisisModal({ onClose }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.85)', backdropFilter: 'blur(8px)' }}>
@@ -15,10 +17,10 @@ export default function CrisisModal({ onClose }: Props) {
             <Heart size={28} className="text-gray-900" />
           </div>
           <h2 className="font-heading font-extrabold text-2xl text-gray-900 leading-tight">
-            You're not alone.
+            {t('crisis.headline')}
           </h2>
           <p className="text-gray-800 text-sm mt-2 leading-relaxed">
-            Help is available right now, 24/7. No judgment. Free and confidential.
+            {t('crisis.sub')}
           </p>
         </div>
 
@@ -30,10 +32,10 @@ export default function CrisisModal({ onClose }: Props) {
               <Phone size={20} className="text-green-700" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900 text-sm">Call or Text 988</p>
-              <p className="text-xs text-gray-500 mt-0.5">Suicide & Crisis Lifeline — free, 24/7</p>
+              <p className="font-semibold text-gray-900 text-sm">{t('crisis.call988Title')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('crisis.call988Desc')}</p>
             </div>
-            <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">CALL NOW</span>
+            <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full">{t('crisis.call988Badge')}</span>
           </a>
 
           <a href="sms:741741&body=HELLO"
@@ -42,10 +44,10 @@ export default function CrisisModal({ onClose }: Props) {
               <MessageSquare size={20} className="text-blue-700" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900 text-sm">Text HOME to 741741</p>
-              <p className="text-xs text-gray-500 mt-0.5">Crisis Text Line — text-based support</p>
+              <p className="font-semibold text-gray-900 text-sm">{t('crisis.text741Title')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('crisis.text741Desc')}</p>
             </div>
-            <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">TEXT</span>
+            <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">{t('crisis.text741Badge')}</span>
           </a>
 
           <a href="tel:18004799233"
@@ -54,21 +56,21 @@ export default function CrisisModal({ onClose }: Props) {
               <Phone size={20} className="text-purple-700" />
             </div>
             <div className="flex-1">
-              <p className="font-semibold text-gray-900 text-sm">National Homeless Hotline</p>
-              <p className="text-xs text-gray-500 mt-0.5">1-800-479-9233 — shelter & resources</p>
+              <p className="font-semibold text-gray-900 text-sm">{t('crisis.homelessTitle')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('crisis.homelessDesc')}</p>
             </div>
-            <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded-full">CALL</span>
+            <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded-full">{t('crisis.homelessBadge')}</span>
           </a>
         </div>
 
         <div className="px-8 pb-8">
           <p className="text-center text-xs text-gray-400 mb-4 leading-relaxed">
-            These services are free, confidential, and available in multiple languages.
+            {t('crisis.footnote')}
           </p>
           <button onClick={onClose}
             className="w-full py-3 rounded-xl text-sm font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
             <X size={14} />
-            I'm okay, close this
+            {t('crisis.close')}
           </button>
         </div>
       </div>

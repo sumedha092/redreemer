@@ -12,32 +12,34 @@ import MissionSection from '@/components/landing/MissionSection';
 import Footer from '@/components/landing/Footer';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, LayoutDashboard, MessageSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LayoutDashboard, MessageSquare } from 'lucide-react';
 
 function DemoCTA() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <section className="py-20 px-6" style={{ background: 'linear-gradient(135deg, #f5e000 0%, #ffe44d 100%)' }}>
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="font-heading font-extrabold text-4xl md:text-5xl text-gray-900 mb-4">
-          See it live. Right now.
+          {t('index.demoTitle')}
         </h2>
         <p className="text-gray-800 text-lg mb-10 max-w-xl mx-auto">
-          No signup required. Click into the caseworker dashboard or try the SMS simulator — it's the real AI.
+          {t('index.demoSub')}
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
-          <button onClick={() => navigate('/dashboard')}
+          <button type="button" onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2.5 px-8 py-4 rounded-xl bg-gray-900 text-white font-semibold text-base hover:bg-gray-800 transition-colors shadow-lg">
             <LayoutDashboard size={20} />
-            Open Caseworker Dashboard
+            {t('index.openCw')}
           </button>
-          <button onClick={() => { navigate('/signup'); }}
+          <button type="button" onClick={() => { navigate('/signup'); }}
             className="flex items-center gap-2.5 px-8 py-4 rounded-xl bg-white text-gray-900 font-semibold text-base hover:bg-gray-50 transition-colors shadow-lg border border-gray-200">
             <MessageSquare size={20} />
-            Try Client View
+            {t('index.tryClient')}
           </button>
         </div>
-        <p className="text-gray-700 text-xs mt-6">Mock mode — no login needed · All data is demo data</p>
+        <p className="text-gray-700 text-xs mt-6">{t('index.demoNote')}</p>
       </div>
     </section>
   );
@@ -45,7 +47,7 @@ function DemoCTA() {
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-white text-foreground scroll-smooth">
+    <div className="min-h-screen bg-background text-foreground scroll-smooth">
       {/* Subtle animated dot grid — fixed behind all content */}
       <AnimatedBackground variant="dots" color="#111827" opacity={0.055} />
 

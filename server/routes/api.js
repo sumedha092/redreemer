@@ -1,4 +1,5 @@
 import express from 'express'
+import { handleIncoming as twilioSmsWebhook } from './sms.js'
 import { checkJwt, getAuth0User } from '../middleware/auth.js'
 import { sendSMS } from '../services/textbelt.js'
 import { getAllClipUrls, synthesizeSpeech } from '../services/elevenlabs.js'
@@ -166,6 +167,9 @@ router.post('/ai/insights', async (req, res) => {
   try {
     const { tool, data } = req.body
     if (!tool || !data) return res.status(400).json({ error: 'tool and data required' })
+    if (!process.env.GEMINI_API_KEY?.trim()) {
+      return res.status(503).json({ error: 'GEMINI_API_KEY is not set on the API server' })
+    }
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai')
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -315,10 +319,59 @@ router.post('/sms/send', async (req, res) => {
 })
 
 /**
+ * POST /api/sms/incoming — Twilio-shaped webhook for dashboard PhoneSimulator.
+ * Same handler as POST /sms/incoming. Must stay above checkJwt.
+ */
+router.post('/sms/incoming', twilioSmsWebhook)
+
+/**
  * GET /api/clients/:id/messages
  * Returns conversation history. Accepts UUID or phone number as :id.
  * Public — no auth required.
  */
+/** On-demand UI translation for i18n — public, rate limited; uses Gemini server-side. */
+const i18nUiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many translation requests. Try again shortly.' },
+})
+
+/**
+ * POST /api/i18n/translate-ui
+ * Body: { targetLang: string (BCP-47), strings: Record<string, string> } — max ~45 entries per request.
+ */
+router.post('/i18n/translate-ui', i18nUiLimiter, async (req, res) => {
+  try {
+    const { targetLang, strings } = req.body || {}
+    if (!targetLang || typeof targetLang !== 'string' || targetLang.length > 20) {
+      return res.status(400).json({ error: 'targetLang is required (BCP-47, max 20 chars)' })
+    }
+    if (!strings || typeof strings !== 'object' || Array.isArray(strings)) {
+      return res.status(400).json({ error: 'strings object is required' })
+    }
+    const keys = Object.keys(strings)
+    if (keys.length === 0 || keys.length > 45) {
+      return res.status(400).json({ error: 'strings must have 1–45 keys per request' })
+    }
+    for (const k of keys) {
+      if (typeof strings[k] !== 'string') {
+        return res.status(400).json({ error: 'All values must be strings' })
+      }
+      if (k.length > 120 || strings[k].length > 800) {
+        return res.status(400).json({ error: 'Key or value too long' })
+      }
+    }
+    const { translateUiStrings } = await import('../services/uiTranslate.js')
+    const translated = await translateUiStrings(targetLang.trim(), strings)
+    res.json({ strings: translated })
+  } catch (err) {
+    console.error('POST /api/i18n/translate-ui error:', err)
+    res.status(500).json({ error: err.message || 'Translation failed' })
+  }
+})
+
 router.get('/clients/:id/messages', async (req, res) => {
   try {
     const id = req.params.id

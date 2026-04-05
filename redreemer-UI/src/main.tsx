@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import "@/i18n";
 import App from "./App.tsx";
 import { ThemeProvider } from "./context/ThemeContext.tsx";
 import { ToastProvider } from "./components/Toast.tsx";

@@ -1,5 +1,6 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { getAppOriginForLogout } from '@/lib/authOrigin';
 
 export type UserType = 'caseworker' | 'homeless' | 'reentry' | null;
 
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     localStorage.removeItem('redreemer-user-type');
-    auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    auth0Logout({ logoutParams: { returnTo: getAppOriginForLogout() } });
   }
 
   return (

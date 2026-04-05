@@ -1,8 +1,10 @@
 import axios from 'axios'
+import { API_BASE, getNgrokSkipHeaders } from '@/lib/apiBase'
 
-const BASE_URL = import.meta.env.VITE_API_URL || ''
-
-export const api = axios.create({ baseURL: BASE_URL })
+export const api = axios.create({
+  baseURL: API_BASE,
+  headers: { ...getNgrokSkipHeaders() },
+})
 
 export function setAuthToken(token: string | null) {
   if (token) {

@@ -13,10 +13,18 @@ export default function DashboardRouter() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // In mock mode, skip auth check entirely
     if (MOCK_MODE) return;
-    if (!isLoading && !isAuthenticated) navigate('/login');
-  }, [isAuthenticated, isLoading]);
+    // Wait for Auth0 to finish init + redirect callback; avoid sending users to /login mid-handshake
+    if (isLoading) return;
+    if (!isAuthenticated) navigate('/login', { replace: true });
+  }, [isAuthenticated, isLoading, MOCK_MODE, navigate]);
+
+  useEffect(() => {
+    if (MOCK_MODE || isLoading || !isAuthenticated) return;
+    const isClient = userType === 'homeless' || userType === 'reentry';
+    const isStaff = userType === 'caseworker';
+    if (!isClient && !isStaff) navigate('/signup', { replace: true });
+  }, [MOCK_MODE, isLoading, isAuthenticated, userType, navigate]);
 
   // Mock mode — show dashboard based on stored userType, default to caseworker for demo
   if (MOCK_MODE) {
@@ -42,6 +50,5 @@ export default function DashboardRouter() {
   if (userType === 'caseworker') return <CaseworkerDashboard />;
   if (userType === 'homeless' || userType === 'reentry') return <ClientDashboard />;
 
-  navigate('/signup');
   return null;
 }

@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Wifi, Battery, Signal } from 'lucide-react';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/apiBase';
 import ReplySpeechButton from '@/components/ReplySpeechButton';
+import { useToast } from '@/components/Toast';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   role: string;
@@ -18,6 +21,8 @@ interface Props {
 const MOCK_MODE = import.meta.env.VITE_MOCK_MODE === 'true';
 
 export default function PhoneSimulator({ clientId, clientPhone, clientName }: Props) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -75,14 +80,23 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
     setMessages(prev => [...prev, optimistic]);
 
     try {
+      if (!API_BASE && import.meta.env.PROD) {
+        toast(t('phone.toastApi'), 'error');
+        setTyping(false);
+        return;
+      }
       if (MOCK_MODE) {
         const { data } = await api.post('/api/sms/simulate', { phone: clientPhone, message: text });
         // If server returns a userId, switch polling to that UUID for accurate results
         if (data?.userId) setPollKey(data.userId);
       } else {
-        await api.post('/sms/incoming', new URLSearchParams({
-          From: clientPhone, Body: text, To: '+14155238886',
-        }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+        // Use /api/sms/incoming (not /sms/incoming) so dev proxy + production API base hit the Node server.
+        // POST to the static Vercel host returns 405.
+        await api.post(
+          '/api/sms/incoming',
+          new URLSearchParams({ From: clientPhone, Body: text, To: '+14155238886' }),
+          { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
       }
 
       // Poll immediately and aggressively until reply arrives
@@ -122,7 +136,7 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
   return (
     <div className="flex flex-col h-full">
       <p className="text-xs text-muted-foreground mb-3 text-center">
-        {MOCK_MODE ? 'Demo mode — Gemini AI' : 'Live SMS via Twilio + Gemini'}
+        {MOCK_MODE ? t('phone.demoMode') : t('phone.liveMode')}
       </p>
 
       <div className="flex-1 flex flex-col bg-[#1c1c1e] rounded-[2.5rem] border-[3px] border-[#3a3a3c] shadow-2xl overflow-hidden min-h-0" style={{ maxHeight: '680px' }}>
@@ -149,7 +163,7 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
         <div className="flex-1 overflow-y-auto px-3 py-4 bg-[#000000] min-h-0">
           {messages.length === 0 && !typing && (
             <div className="flex items-center justify-center h-full">
-              <p className="text-[#8e8e93] text-xs text-center">No messages yet.<br />Type below to start.</p>
+              <p className="text-[#8e8e93] text-xs text-center">{t('phone.empty')}<br />{t('phone.empty2')}</p>
             </div>
           )}
 
@@ -180,7 +194,7 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
                         <ReplySpeechButton
                           text={msg.content}
                           variant={isUser ? 'phoneUser' : 'phoneDark'}
-                          listenLabel="Listen"
+                          listenLabel={t('phone.listen')}
                         />
                       </div>
                     </div>
@@ -209,14 +223,14 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="iMessage"
+            placeholder={t('phone.placeholder')}
             disabled={sending}
             className="flex-1 min-w-0 bg-[#3a3a3c] text-white placeholder:text-[#8e8e93] rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0a84ff] disabled:opacity-50"
           />
           <ReplySpeechButton
             text={input}
             variant="phoneDark"
-            listenLabel="Hear"
+            listenLabel={t('phone.hear')}
             className="shrink-0 border border-[#3a3a3c] rounded-full px-2 py-1.5"
           />
           <button
