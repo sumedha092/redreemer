@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Volume2, Loader2 } from 'lucide-react';
-import { API_BASE, getNgrokSkipHeaders } from '@/lib/apiBase';
+import { API_BASE } from '@/lib/apiBase';
+import { api } from '@/lib/api';
 import { useToast } from '@/components/Toast';
 
 const MAX_CHARS = 2500;
@@ -65,31 +66,37 @@ export default function ReplySpeechButton({
 
     setLoading(true);
     try {
-      const ttsUrl = `${API_BASE.replace(/\/$/, '')}/api/tts`;
-      const res = await fetch(ttsUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getNgrokSkipHeaders(),
-        },
-        body: JSON.stringify({ text: trimmed }),
-        mode: 'cors',
-      });
-      const ct = res.headers.get('content-type') || '';
-      if (!res.ok) {
-        const err = ct.includes('application/json') ? await res.json().catch(() => ({})) : {};
-        throw new Error(typeof err.error === 'string' ? err.error : `Speech failed (${res.status})`);
+      const res = await api.post<ArrayBuffer>(
+        '/api/tts',
+        { text: trimmed },
+        {
+          responseType: 'arraybuffer',
+          headers: { Accept: 'audio/mpeg' },
+          validateStatus: () => true,
+        }
+      );
+      const buf = res.data;
+      const ct = String(res.headers['content-type'] || '');
+      if (res.status !== 200) {
+        let msg = `Speech failed (${res.status})`;
+        if (ct.includes('application/json') && buf.byteLength < 4096) {
+          try {
+            const j = JSON.parse(new TextDecoder().decode(buf)) as { error?: string };
+            if (typeof j.error === 'string') msg = j.error;
+          } catch {
+            /* ignore */
+          }
+        }
+        throw new Error(msg);
       }
       if (ct.includes('text/html')) {
         throw new Error(
-          'API returned a web page, not audio. Set VITE_API_URL to your Node server URL (https, no trailing slash).'
+          'API returned HTML, not audio. Use VITE_API_URL=/api/p on Vercel and set API_UPSTREAM_ORIGIN to your Node server.'
         );
       }
-      if (!ct.includes('audio') && !ct.includes('octet-stream')) {
-        throw new Error('Server did not return audio (check API / ElevenLabs on the server)');
+      if (buf.byteLength < 64) {
+        throw new Error('Server returned empty audio (check ELEVENLABS_API_KEY on the API server)');
       }
-
-      const buf = await res.arrayBuffer();
       const blob = new Blob([buf], { type: 'audio/mpeg' });
       const objectUrl = URL.createObjectURL(blob);
       blobUrlRef.current = objectUrl;

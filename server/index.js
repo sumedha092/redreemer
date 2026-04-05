@@ -50,23 +50,7 @@ const smsLimiter = rateLimit({
   message: 'Too many requests'
 })
 
-// Public API routes that bypass JWT (mounted BEFORE apiRoutes to avoid JWT error handler)
-app.post('/api/tts', async (req, res) => {
-  const { synthesizeSpeech } = await import('./services/elevenlabs.js')
-  try {
-    const { text } = req.body || {}
-    const audio = await synthesizeSpeech(text)
-    res.setHeader('Content-Type', 'audio/mpeg')
-    res.setHeader('Cache-Control', 'no-store')
-    res.send(audio)
-  } catch (err) {
-    const msg = err.message || 'TTS failed'
-    if (msg.includes('required') || msg.includes('at most') || msg.includes('not configured')) {
-      return res.status(400).json({ error: msg })
-    }
-    res.status(502).json({ error: msg })
-  }
-})
+// POST /api/tts is handled by routes/api.js (rate-limited) so there is a single code path.
 
 // Routes — Twilio webhook (production): POST /sms/incoming (POST /api/sms/incoming is on api router)
 app.use('/sms', smsLimiter, smsRoutes)

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd redreemer-UI && npm install",
+  "buildCommand": "cd redreemer-UI && npm run build",
+  "outputDirectory": "redreemer-UI/dist",
+  "rewrites": [
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

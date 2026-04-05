@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GEMINI_TEXT_MODEL } from './geminiModel.js'
 
 /**
  * Translate flat UI strings (dot-path keys → English values) to target locale.
@@ -14,7 +15,7 @@ export async function translateUiStrings(targetLang, flatEntries) {
   }
 
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
 
   const prompt = `You translate UI strings for a nonprofit web app "Redreemer" (housing, reentry, financial wellness).
 

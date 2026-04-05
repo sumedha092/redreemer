@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import { getNearbyResources, detectResourceType, extractLocation } from './places.js'
 import { getFallbackByStep } from './fallbackResponses.js'
 import { formatResourcesForPrompt } from './resourceFinder.js'
+import { GEMINI_TEXT_MODEL } from './geminiModel.js'
 dotenv.config()
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -121,7 +122,7 @@ async function callGeminiWithRetry(model, content) {
  * Classify a new user's response to the routing question.
  */
 export async function classifyUserType(message) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
   const prompt = `The user responded to "Are you currently homeless, recently released from prison, or both?" with: "${message}"
 Classify as exactly one of: homeless, reentry, both
 Return only the single classification word, nothing else.`
@@ -137,7 +138,7 @@ Return only the single classification word, nothing else.`
  * Generate a response using proper multi-turn conversation history.
  */
 export async function generateResponse(user, history, message) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
 
   const userType = user.user_type || 'homeless'
   const systemPrompt = buildSystemPrompt(user, userType)
@@ -199,7 +200,7 @@ export async function generateResponse(user, history, message) {
  * Generate a personalized contextual check-in SMS referencing prior conversation.
  */
 export async function generateContextualCheckin(user, lastMessages) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
   const name = user.name || 'there'
   const step = user.current_step || 1
   const lang = user.preferred_language === 'es' ? 'Spanish (conversational Mexican Spanish)' : 'English'
@@ -236,7 +237,7 @@ Rules:
  * Not sent if user texted in last 24 hours.
  */
 export async function generateProgressSMS(user, recentConversations) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
   const meta = user.user_meta || {}
   const moneyType = meta.money_personality_type || 'survivor'
   const lang = user.preferred_language === 'es' ? 'Spanish (conversational Mexican Spanish)' : 'English'
@@ -294,7 +295,7 @@ Plain text only. No emojis. Under 320 characters total.`
 export async function generateWeeklyWins(user, weekSummary) {
   if (!weekSummary.messageCount && !weekSummary.stepsAdvanced && !weekSummary.topics?.length) return null
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
   const lang = user.preferred_language === 'es' ? 'Spanish (conversational Mexican Spanish)' : 'English'
 
   const prompt = `Write a 2-3 line weekly wins message in ${lang} for ${user.name || 'someone'} who is working toward financial independence.
@@ -324,7 +325,7 @@ Rules:
  * Generate a personalized weekly Sunday summary SMS (legacy).
  */
 export async function generateWeeklySummary(user, recentConversations) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
   const historySnippet = recentConversations.slice(-10)
     .map(m => `${m.role === 'user' ? 'User' : 'Redreemer'}: ${m.content}`)
     .join('\n')
@@ -347,7 +348,7 @@ export async function generateRecoveryQuestion(existingUser) {
  * Generate a 3-part weekly snapshot.
  */
 export async function generateWeeklySnapshot(user, recentConversations) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = genAI.getGenerativeModel({ model: GEMINI_TEXT_MODEL })
 
   const historySnippet = recentConversations.slice(-10)
     .map(m => `${m.role === 'user' ? 'User' : 'Redreemer'}: ${m.content}`)

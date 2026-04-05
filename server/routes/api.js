@@ -20,6 +20,7 @@ import {
   getRiskLabel
 } from '../services/supabase.js'
 import { supabase } from '../services/supabase.js'
+import { generateContentWithFallback } from '../services/geminiModel.js'
 
 const router = express.Router()
 
@@ -173,7 +174,6 @@ router.post('/ai/insights', async (req, res) => {
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai')
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompts = {
       analytics: `You are an AI assistant helping a social worker understand their caseload.
@@ -224,8 +224,8 @@ Plain text only — no markdown.`
     const prompt = prompts[tool]
     if (!prompt) return res.status(400).json({ error: 'Unknown tool' })
 
-    const result = await model.generateContent(prompt)
-    const raw = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+    const rawText = await generateContentWithFallback(genAI, prompt)
+    const raw = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
     const parsed = JSON.parse(raw)
     res.json({ insights: parsed })
   } catch (err) {

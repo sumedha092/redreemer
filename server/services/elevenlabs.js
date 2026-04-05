@@ -108,7 +108,8 @@ export async function synthesizeSpeech(text, options = {}) {
   const apiKey = (process.env.ELEVENLABS_API_KEY || '').trim()
   const voiceId = (options.voiceId || process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM').trim()
   const primaryModel = (options.modelId || process.env.ELEVENLABS_MODEL_ID || 'eleven_turbo_v2_5').trim()
-  const fallbackModel = 'eleven_multilingual_v2'
+  /** Try in order — some accounts/plans reject turbo_v2_5. */
+  const modelFallbacks = ['eleven_multilingual_v2', 'eleven_turbo_v2', 'eleven_monolingual_v1']
 
   if (!apiKey || apiKey === 'your_elevenlabs_api_key') {
     throw new Error('ELEVENLABS_API_KEY is not configured on the server')
@@ -139,21 +140,28 @@ export async function synthesizeSpeech(text, options = {}) {
     })
   }
 
-  let response = await ttsRequest(primaryModel)
-  if (!response.ok && primaryModel !== fallbackModel) {
+  const tryModels = [primaryModel, ...modelFallbacks].filter((m, i, a) => m && a.indexOf(m) === i)
+  let response = null
+  let lastErrText = ''
+  for (let i = 0; i < tryModels.length; i++) {
+    const modelId = tryModels[i]
+    response = await ttsRequest(modelId)
+    if (response.ok) break
     const status = response.status
-    const errSnippet = await response.text()
-    if (status === 400 || status === 404 || status === 422) {
-      console.warn('[ElevenLabs] model', primaryModel, 'failed, retrying', fallbackModel, errSnippet.slice(0, 160))
-      response = await ttsRequest(fallbackModel)
-    } else {
-      throw new Error(`ElevenLabs error ${status}: ${errSnippet.slice(0, 300)}`)
+    lastErrText = await response.text()
+    if (status === 401 || status === 403) {
+      throw new Error(`ElevenLabs error ${status}: ${lastErrText.slice(0, 300)}`)
     }
+    const retryable = status === 400 || status === 404 || status === 422
+    if (retryable && i < tryModels.length - 1) {
+      console.warn('[ElevenLabs] model', modelId, 'failed (' + status + '), trying next:', tryModels[i + 1], lastErrText.slice(0, 120))
+      continue
+    }
+    throw new Error(`ElevenLabs error ${status}: ${lastErrText.slice(0, 300)}`)
   }
 
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`ElevenLabs error ${response.status}: ${errText.slice(0, 300)}`)
+  if (!response?.ok) {
+    throw new Error(`ElevenLabs error: ${lastErrText.slice(0, 300)}`)
   }
 
   return Buffer.from(await response.arrayBuffer())

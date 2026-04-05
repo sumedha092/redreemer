@@ -1,16 +1,16 @@
 /**
  * Same-origin proxy: browser → /api/p/... → API_UPSTREAM_ORIGIN/...
- * Used when Vercel "Root Directory" is `redreemer-UI`.
- * Repository-root deploy uses /api/p/[...path].js — keep both files in sync.
+ * Used when Vercel "Root Directory" is the repository root (see /vercel.json).
+ *
+ * If Root Directory is `redreemer-UI`, the copy at redreemer-UI/api/p/[...path].js is used instead — keep both files identical.
  *
  * Vercel: API_UPSTREAM_ORIGIN=https://YOUR.ngrok-free.dev (no trailing slash, no /api)
- * Build: VITE_API_URL=/api/p
+ * Vercel env build: VITE_API_URL=/api/p
  */
 
 export const config = { runtime: 'edge' }
 
 export default async function handler(request) {
-  // CORS preflight — avoids 405 when the browser probes the proxy (e.g. some extension setups).
   if (request.method === 'OPTIONS') {
     const reqHdr = request.headers.get('Access-Control-Request-Headers') || ''
     return new Response(null, {
