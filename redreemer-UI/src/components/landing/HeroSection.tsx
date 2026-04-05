@@ -19,8 +19,18 @@ export default function HeroSection() {
           <h1 className="font-heading font-extrabold text-6xl md:text-[80px] leading-[1.0] tracking-tight mb-7">
             <span className="text-foreground">Redeem your</span><br />
             <span className="text-foreground">next step.</span><br />
-            <span className="text-gradient-brand">Redream what's</span><br />
-            <span className="text-gradient-brand">possible.</span>
+            <span style={{
+              background: 'linear-gradient(135deg, #f5e000 0%, #ff6b35 30%, #e040fb 60%, #00bcd4 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>Redream what's</span><br />
+            <span style={{
+              background: 'linear-gradient(135deg, #00bcd4 0%, #e040fb 40%, #ff6b35 70%, #f5e000 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>possible.</span>
           </h1>
 
           <p className="text-muted-foreground text-xl leading-relaxed max-w-[460px] mb-10">
