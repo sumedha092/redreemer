@@ -1,7 +1,8 @@
 import express from 'express'
+import rateLimit from 'express-rate-limit'
 import { checkJwt, getAuth0User } from '../middleware/auth.js'
 import { sendSMS } from '../services/textbelt.js'
-import { getAllClipUrls } from '../services/elevenlabs.js'
+import { getAllClipUrls, synthesizeSpeech } from '../services/elevenlabs.js'
 import {
   getCaseworkerByAuth0Id,
   getCaseworkerClients,
@@ -17,6 +18,15 @@ import {
 import { supabase } from '../services/supabase.js'
 
 const router = express.Router()
+
+/** On-demand TTS — rate limited; ElevenLabs key stays server-side only. */
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many speech requests. Try again in a minute.' },
+})
 
 // ── FEATURE 6: Impact metrics (no auth required) ─────────────────────────────
 let impactCache = null
@@ -116,6 +126,27 @@ Be specific, warm, and factual. No fluff. Plain text only.`
   } catch (err) {
     console.error('GET /impact/summary error:', err)
     res.json({ summary: "Redreemer is helping people experiencing homelessness and reentry find stability through step-by-step guidance on housing, banking, and employment." })
+  }
+})
+
+/**
+ * POST /api/tts
+ * Body: { text: string } — returns audio/mpeg (ElevenLabs). API key only on server.
+ */
+router.post('/tts', ttsLimiter, async (req, res) => {
+  try {
+    const { text } = req.body || {}
+    const audio = await synthesizeSpeech(text)
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Cache-Control', 'no-store')
+    res.send(audio)
+  } catch (err) {
+    console.error('POST /api/tts error:', err.message)
+    const msg = err.message || 'TTS failed'
+    if (msg.includes('required') || msg.includes('at most') || msg.includes('not configured')) {
+      return res.status(400).json({ error: msg })
+    }
+    res.status(502).json({ error: msg })
   }
 })
 

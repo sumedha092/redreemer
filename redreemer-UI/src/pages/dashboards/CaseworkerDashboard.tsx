@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardShell from '@/components/DashboardShell';
 import { useAuth } from '@/context/AuthContext';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -25,6 +26,7 @@ const MOCK_CLIENTS = [
 
 export default function CaseworkerDashboard() {
   const [tab, setTab] = useState('home');
+  const navigate = useNavigate();
   const { user } = useAuth0();
   const { userType } = useAuth();
 
@@ -33,7 +35,10 @@ export default function CaseworkerDashboard() {
   return (
     <DashboardShell
       activeTab={tab}
-      onTabChange={setTab}
+      onTabChange={(id) => {
+        if (id === 'clients') navigate('/dashboard/clients');
+        else setTab(id);
+      }}
       navItems={NAV}
       userName={user?.name}
       userEmail={user?.email}
@@ -77,13 +82,24 @@ export default function CaseworkerDashboard() {
           <div className="glass-card !p-0 overflow-hidden">
             <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <h3 className="font-heading font-semibold text-gray-900">Your Clients</h3>
-              <button className="flex items-center gap-1.5 text-xs text-yellow-600 hover:underline">
-                <UserPlus size={14} /> Add client
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard/clients')}
+                className="flex items-center gap-1.5 text-xs text-yellow-600 hover:underline"
+              >
+                <UserPlus size={14} /> Open client manager
               </button>
             </div>
             <div className="divide-y divide-border">
               {MOCK_CLIENTS.map(c => (
-                <div key={c.name} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer">
+                <div
+                  key={c.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate('/dashboard/clients')}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/dashboard/clients'); } }}
+                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 ${
                     c.type === 'homeless' ? 'bg-emerald-600' : c.type === 'reentry' ? 'bg-amber-500' : 'bg-purple-600'
                   }`}>
@@ -142,7 +158,7 @@ export default function CaseworkerDashboard() {
         </div>
       )}
 
-      {(tab === 'analytics' || tab === 'clients' || tab === 'messages') && (
+      {(tab === 'analytics' || tab === 'messages') && (
         <div className="flex items-center justify-center h-64 text-gray-500">
           <p className="text-sm">Full {tab} view — coming soon</p>
         </div>
