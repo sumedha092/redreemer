@@ -1,6 +1,7 @@
 import express from 'express'
 import { sendSMS, sendMMS } from '../services/twilio.js'
 import { classifyUserType, generateResponse, generateRecoveryQuestion } from '../services/gemini.js'
+import { detectCrisisSeverity, getCrisisResponse } from '../services/safety.js'
 import { getClipUrl } from '../services/elevenlabs.js'
 import { getShelterForCity } from '../services/weather.js'
 import {
@@ -68,6 +69,8 @@ router.post('/incoming', async (req, res) => {
 
   if (!phone || !message) return
 
+  const crisisSev = detectCrisisSeverity(message)
+
   try {
     // Check for pending profile recovery confirmation
     const recovery = pendingRecovery.get(phone)
@@ -114,6 +117,17 @@ router.post('/incoming', async (req, res) => {
 
       // Brand new user
       user = await createUser(phone)
+      if (crisisSev) {
+        const crisisReply = getCrisisResponse('en')
+        try {
+          await saveConversation(user.id, 'user', message)
+          await saveConversation(user.id, 'assistant', crisisReply)
+        } catch (e) {
+          console.error('Crisis convo save (new SMS user):', e)
+        }
+        await sendSMS(phone, crisisReply)
+        return
+      }
       await sendSMS(phone,
         `You reached Redreemer. We help people get back on their feet — banking, housing, benefits, jobs.\n\nOne question: Are you currently homeless, recently released from prison, or both?`
       )
@@ -122,6 +136,17 @@ router.post('/incoming', async (req, res) => {
 
     // --- USER EXISTS BUT NO user_type YET ---
     if (!user.user_type) {
+      if (crisisSev) {
+        const crisisReply = getCrisisResponse('en')
+        try {
+          await saveConversation(user.id, 'user', message)
+          await saveConversation(user.id, 'assistant', crisisReply)
+        } catch (e) {
+          console.error('Crisis convo save:', e)
+        }
+        await sendSMS(phone, crisisReply)
+        return
+      }
       let userType
       try {
         userType = await classifyUserType(message)
@@ -153,6 +178,18 @@ router.post('/incoming', async (req, res) => {
 
     // Update last active
     await updateLastActive(user.id)
+
+    if (crisisSev) {
+      const crisisReply = getCrisisResponse('en')
+      try {
+        await saveConversation(user.id, 'user', message)
+        await saveConversation(user.id, 'assistant', crisisReply)
+      } catch (e) {
+        console.error('Crisis convo save:', e)
+      }
+      await sendSMS(phone, crisisReply)
+      return
+    }
 
     // Fetch conversation history
     const history = await getConversationHistory(user.id, 20)

@@ -7,24 +7,262 @@ import {
   getCaseworkerClients,
   getAllClients,
   getUserById,
-  createUser,
   updateCurrentStep,
+  updateLastActive,
   getConversationHistory,
-  getStepLogs
+  getStepLogs,
+  saveConversation,
+  logStepCompletion,
+  saveReminder
 } from '../services/supabase.js'
 import { supabase } from '../services/supabase.js'
+import { classifyUserType, generateResponse } from '../services/gemini.js'
+import { detectCrisisSeverity, detectScamHints, getCrisisResponse } from '../services/safety.js'
+import { updateHealthScore } from '../services/healthScore.js'
 
 const router = express.Router()
 
-// Apply JWT auth to all routes
+// ─── SMS SIMULATOR (no auth — demo endpoint) ───────────────────────────────
+
+function parseStepComplete(text) { return text.includes('[STEP_COMPLETE]') }
+
+function parseReminder(text) {
+  const match = text.match(/\[REMINDER:\s*(.+?)\s*\|\s*(.+?)\]/i)
+  if (!match) return null
+  try {
+    const sendAt = new Date(match[2].trim())
+    if (isNaN(sendAt.getTime())) return null
+    return { text: match[1].trim(), sendAt: sendAt.toISOString() }
+  } catch { return null }
+}
+
+function stripSignals(text) {
+  return text.replace(/\[STEP_COMPLETE\]/gi, '').replace(/\[REMINDER:[^\]]*\]/gi, '').trim()
+}
+
+/**
+ * POST /api/simulate
+ * Simulates the full SMS pipeline without Twilio — used by the dashboard demo.
+ * Body: { phone, message }
+ * Returns: { reply, user, stepCompleted, newStep }
+ */
+router.post('/simulate', async (req, res) => {
+  const { phone, message, responseLanguage = 'en' } = req.body
+  if (!phone || !message) return res.status(400).json({ error: 'phone and message required' })
+
+  const lang = typeof responseLanguage === 'string' ? responseLanguage : 'en'
+  const scamHints = detectScamHints(message)
+
+  try {
+    let user = await (async () => {
+      const { data } = await supabase.from('users').select('*').eq('phone_number', phone).single()
+      return data
+    })()
+
+    const crisisLevel = detectCrisisSeverity(message)
+    const crisisReply = crisisLevel ? getCrisisResponse(lang) : null
+
+    // New user
+    if (!user) {
+      const { data: newUser } = await supabase
+        .from('users')
+        .insert({ phone_number: phone, current_step: 1 })
+        .select().single()
+      user = newUser
+
+      if (crisisLevel) {
+        try {
+          await saveConversation(user.id, 'user', message)
+          await saveConversation(user.id, 'assistant', crisisReply)
+        } catch (e) {
+          console.error('save crisis convo (new user):', e)
+        }
+        return res.json({
+          reply: crisisReply,
+          user,
+          stepCompleted: false,
+          newStep: 1,
+          crisis: true,
+          crisisLevel,
+          scamHints,
+          responseLanguage: lang,
+        })
+      }
+
+      return res.json({
+        reply: `You reached Redreemer. We help people get back on their feet — banking, housing, benefits, jobs.\n\nOne question: Are you currently homeless, recently released from prison, or both?`,
+        user,
+        stepCompleted: false,
+        newStep: 1,
+        scamHints,
+        responseLanguage: lang,
+      })
+    }
+
+    // No user_type yet — classify
+    if (!user.user_type) {
+      if (crisisLevel) {
+        try {
+          await saveConversation(user.id, 'user', message)
+          await saveConversation(user.id, 'assistant', crisisReply)
+        } catch (e) {
+          console.error('save crisis convo:', e)
+        }
+        return res.json({
+          reply: crisisReply,
+          user,
+          stepCompleted: false,
+          newStep: user.current_step,
+          crisis: true,
+          crisisLevel,
+          scamHints,
+          responseLanguage: lang,
+        })
+      }
+
+      const userType = await classifyUserType(message)
+      const { data: updated } = await supabase
+        .from('users').update({ user_type: userType }).eq('id', user.id).select().single()
+      user = updated
+
+      const welcomeMessages = {
+        homeless: `Got it. I'm here to help you find shelter, food, ID, banking, and a path to housing — step by step.\n\nYou're on Step 1 of 8. What do you need most right now — food, shelter, or something else?`,
+        reentry: `Got it. First 90 days after release are critical. I'll help you with parole check-in, ID, banking, jobs, and benefits — one step at a time.\n\nYou're on Step 1 of 8. Do you have your parole check-in address and time?`,
+        both: `Got it. You're dealing with a lot right now. I'll help with both — parole, shelter, ID, banking, benefits, and housing.\n\nYou're on Step 1 of 8. What's most urgent right now?`
+      }
+
+      await saveConversation(user.id, 'user', message)
+      const reply = welcomeMessages[userType] || welcomeMessages.homeless
+      await saveConversation(user.id, 'assistant', reply)
+      return res.json({
+        reply,
+        user,
+        stepCompleted: false,
+        newStep: user.current_step,
+        scamHints,
+        responseLanguage: lang,
+      })
+    }
+
+    // Full conversation
+    if (crisisLevel) {
+      await updateLastActive(user.id)
+      try {
+        await saveConversation(user.id, 'user', message)
+        await saveConversation(user.id, 'assistant', crisisReply)
+      } catch (e) {
+        console.error('save crisis convo:', e)
+      }
+      return res.json({
+        reply: crisisReply,
+        user,
+        stepCompleted: false,
+        newStep: user.current_step,
+        crisis: true,
+        crisisLevel,
+        scamHints,
+        responseLanguage: lang,
+      })
+    }
+
+    await updateLastActive(user.id)
+    const history = await getConversationHistory(user.id, 20)
+
+    let aiResponse
+    try {
+      aiResponse = await generateResponse(user, history, message, { responseLanguage: lang })
+    } catch (err) {
+      console.error('Gemini error in simulator:', err)
+      return res.json({
+        reply: `I'm having trouble right now. Try again in a moment. If you are in crisis, call or text 988.`,
+        user,
+        stepCompleted: false,
+        newStep: user.current_step,
+        scamHints,
+        crisis: false,
+        responseLanguage: lang,
+        error: 'ai_unavailable',
+      })
+    }
+
+    const stepComplete = parseStepComplete(aiResponse)
+    const reminder = parseReminder(aiResponse)
+    let newStep = user.current_step
+
+    if (stepComplete) {
+      newStep = Math.min(user.current_step + 1, 8)
+      await supabase.from('users').update({ current_step: newStep }).eq('id', user.id)
+      await logStepCompletion(user.id, user.current_step)
+      await updateHealthScore(user.id)
+      user = { ...user, current_step: newStep }
+    }
+
+    if (reminder) {
+      try { await saveReminder(user.id, reminder.text, reminder.sendAt) } catch {}
+    }
+
+    const reply = stripSignals(aiResponse)
+    await saveConversation(user.id, 'user', message)
+    await saveConversation(user.id, 'assistant', reply)
+
+    res.json({
+      reply,
+      user,
+      stepCompleted: stepComplete,
+      newStep,
+      scamHints,
+      crisis: false,
+      responseLanguage: lang,
+    })
+  } catch (err) {
+    console.error('Simulate error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── Apply JWT auth to all routes below ────────────────────────────────────
 router.use(checkJwt)
 
 // Error handler for JWT failures
-router.use((err, req, res, next) => {
+router.use((err, _req, res, next) => {
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({ error: 'Invalid or missing token' })
   }
   next(err)
+})
+
+/**
+ * POST /api/caseworker/register
+ * Auto-register a caseworker on first login. Idempotent — safe to call every login.
+ */
+router.post('/caseworker/register', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    // Check if already exists
+    const existing = await getCaseworkerByAuth0Id(authUser.auth0Id)
+    if (existing) return res.json(existing)
+
+    // Create new caseworker record
+    const { name, organization } = req.body
+    const { data, error } = await supabase
+      .from('caseworkers')
+      .insert({
+        auth0_id: authUser.auth0Id,
+        name: name || 'Caseworker',
+        organization: organization || 'Redreemer',
+        role: 'caseworker'
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    res.status(201).json(data)
+  } catch (err) {
+    console.error('POST /caseworker/register error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
 })
 
 /**
@@ -41,7 +279,14 @@ router.get('/clients', async (req, res) => {
       return res.json(clients)
     }
 
-    const caseworker = await getCaseworkerByAuth0Id(authUser.auth0Id)
+    let caseworker = await getCaseworkerByAuth0Id(authUser.auth0Id)
+    if (!caseworker) {
+      // Auto-register on first use
+      const { data } = await supabase.from('caseworkers').insert({
+        auth0_id: authUser.auth0Id, name: 'Caseworker', organization: 'Redreemer', role: 'caseworker'
+      }).select().single()
+      caseworker = data
+    }
     if (!caseworker) return res.status(403).json({ error: 'Caseworker record not found' })
 
     const clients = await getCaseworkerClients(caseworker.id)
@@ -338,6 +583,130 @@ router.get('/clients/:id/health-score', async (req, res) => {
     res.json({ score })
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/clients/:id/notes
+ * Fetch case notes for a client (caseworker-private)
+ * Requires DB table: client_notes (id, user_id, caseworker_id, content, created_at)
+ */
+router.get('/clients/:id/notes', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    const { data, error } = await supabase
+      .from('client_notes')
+      .select('id, content, created_at, caseworkers(name)')
+      .eq('user_id', req.params.id)
+      .order('created_at', { ascending: false })
+
+    if (error) return res.json([]) // table may not exist yet
+    res.json(data || [])
+  } catch (err) {
+    res.json([])
+  }
+})
+
+/**
+ * POST /api/clients/:id/notes
+ * Add a case note for a client
+ */
+router.post('/clients/:id/notes', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    const { content } = req.body
+    if (!content?.trim()) return res.status(400).json({ error: 'content is required' })
+
+    const caseworker = await getCaseworkerByAuth0Id(authUser.auth0Id)
+
+    const { data, error } = await supabase
+      .from('client_notes')
+      .insert({
+        user_id: req.params.id,
+        caseworker_id: caseworker?.id || null,
+        content: content.trim()
+      })
+      .select('id, content, created_at')
+      .single()
+
+    if (error) return res.status(500).json({ error: 'Could not save note — ensure client_notes table exists' })
+    res.status(201).json(data)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * DELETE /api/clients/:id/notes/:noteId
+ */
+router.delete('/clients/:id/notes/:noteId', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    await supabase.from('client_notes').delete().eq('id', req.params.noteId)
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * GET /api/clients/:id/reminders
+ * Fetch all reminders for a client (upcoming + past)
+ */
+router.get('/clients/:id/reminders', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    const { data, error } = await supabase
+      .from('reminders')
+      .select('id, reminder_text, send_at, sent, created_at')
+      .eq('user_id', req.params.id)
+      .order('send_at', { ascending: true })
+
+    if (error) return res.json([])
+    res.json(data || [])
+  } catch (err) {
+    res.json([])
+  }
+})
+
+/**
+ * POST /api/broadcast
+ * Send a message to multiple clients at once
+ * Body: { clientIds: string[], message: string }
+ */
+router.post('/broadcast', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    const { clientIds, message } = req.body
+    if (!Array.isArray(clientIds) || clientIds.length === 0) return res.status(400).json({ error: 'clientIds array required' })
+    if (!message?.trim()) return res.status(400).json({ error: 'message required' })
+    if (clientIds.length > 50) return res.status(400).json({ error: 'Max 50 clients per broadcast' })
+
+    const results = await Promise.allSettled(
+      clientIds.map(async (id) => {
+        const client = await getUserById(id)
+        if (!client?.phone_number) throw new Error(`No phone for ${id}`)
+        await sendSMS(client.phone_number, message)
+        return { id, name: client.name, phone: client.phone_number }
+      })
+    )
+
+    const sent = results.filter(r => r.status === 'fulfilled').map(r => r.value)
+    const failed = results.filter(r => r.status === 'rejected').length
+
+    res.json({ sent: sent.length, failed, recipients: sent })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
   }
 })
 

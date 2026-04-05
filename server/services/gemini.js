@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import dotenv from 'dotenv'
 import { getNearbyResources, detectResourceType, extractLocation } from './places.js'
+import { languageInstructionName } from './safety.js'
 dotenv.config()
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -113,9 +114,12 @@ Return only the single classification word, nothing else.`
 /**
  * Generate a response for an existing user with known user_type.
  * Returns raw string that may contain [STEP_COMPLETE] and [REMINDER:...] signals.
+ * @param {{ responseLanguage?: string }} [options] — BCP-ish code (en, es, …); full reply in that language.
  */
-export async function generateResponse(user, history, message) {
+export async function generateResponse(user, history, message, options = {}) {
   const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+  const langCode = (options.responseLanguage || 'en').split('-')[0].toLowerCase()
+  const langName = languageInstructionName(langCode)
 
   // Try to get real nearby resources from Google Places
   const location = extractLocation(message, user)
@@ -142,6 +146,10 @@ export async function generateResponse(user, history, message) {
   // Inject real resources if found
   if (realResources) {
     systemPrompt += `\n\nREAL NEARBY RESOURCES (use these exact names, addresses, and phone numbers in your response):\n${realResources}`
+  }
+
+  if (langCode !== 'en') {
+    systemPrompt += `\n\nLANGUAGE: Write your entire reply in ${langName} (not English). Use short sentences and plain words for stressed readers. Keep the same safety rules (988, etc.) and use local emergency numbers only if you are certain; otherwise keep US 988/911.`
   }
 
   const result = await model.generateContent([

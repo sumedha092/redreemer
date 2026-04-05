@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useLocalStorage } from '../../lib/useLocalStorage.js'
 
 const DEFAULT_DEBTS = [
   { id: 1, name: 'Court Debt',         balance: 13000, rate: 0,   minPayment: 50  },
@@ -39,9 +40,9 @@ function calcPayoff(debts, extraPayment, method) {
 }
 
 export default function DebtPayoff() {
-  const [debts, setDebts] = useState(DEFAULT_DEBTS)
-  const [method, setMethod] = useState('snowball')
-  const [extraPayment, setExtraPayment] = useState(50)
+  const [debts, setDebts] = useLocalStorage('debt_debts', DEFAULT_DEBTS)
+  const [method, setMethod] = useLocalStorage('debt_method', 'snowball')
+  const [extraPayment, setExtraPayment] = useLocalStorage('debt_extra', 50)
   const [newDebt, setNewDebt] = useState({ name: '', balance: '', rate: '', minPayment: '' })
 
   const snowball = useMemo(() => calcPayoff(debts, extraPayment, 'snowball'), [debts, extraPayment])
@@ -69,7 +70,7 @@ export default function DebtPayoff() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">Debt Payoff Calculator</h2>
+      <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Debt Payoff Calculator</h2>
 
       {/* Method selector */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -95,18 +96,18 @@ export default function DebtPayoff() {
             className={`text-left p-5 rounded-xl border-2 transition-all ${
               method === m.id
                 ? 'border-amber-500 bg-amber-500/10'
-                : 'border-navy-700 bg-navy-800 hover:border-navy-500'
+                : 'border-[hsl(var(--border))] glass-card hover:border-[hsl(var(--border))]'
             }`}
           >
-            <p className="text-white font-semibold mb-1">{m.label}</p>
-            <p className="text-navy-400 text-xs mb-3">{m.desc}</p>
+            <p className="text-[hsl(var(--foreground))] font-semibold mb-1">{m.label}</p>
+            <p className="text-[hsl(var(--muted-foreground))] text-xs mb-3">{m.desc}</p>
             <div className="flex gap-4">
               <div>
-                <p className="text-navy-400 text-xs">Payoff time</p>
+                <p className="text-[hsl(var(--muted-foreground))] text-xs">Payoff time</p>
                 <p className="text-amber-400 font-bold">{m.months} months</p>
               </div>
               <div>
-                <p className="text-navy-400 text-xs">Total interest</p>
+                <p className="text-[hsl(var(--muted-foreground))] text-xs">Total interest</p>
                 <p className="text-red-400 font-bold">${m.interest.toLocaleString()}</p>
               </div>
             </div>
@@ -116,24 +117,24 @@ export default function DebtPayoff() {
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-navy-800 rounded-xl p-4 text-center">
-          <p className="text-navy-400 text-xs mb-1">Total Debt</p>
+        <div className="glass-card rounded-xl p-4 text-center">
+          <p className="text-[hsl(var(--muted-foreground))] text-xs mb-1">Total Debt</p>
           <p className="text-red-400 text-xl font-bold">${totalDebt.toLocaleString()}</p>
         </div>
-        <div className="bg-navy-800 rounded-xl p-4 text-center">
-          <p className="text-navy-400 text-xs mb-1">Debt-Free In</p>
+        <div className="glass-card rounded-xl p-4 text-center">
+          <p className="text-[hsl(var(--muted-foreground))] text-xs mb-1">Debt-Free In</p>
           <p className="text-amber-400 text-xl font-bold">{current.months} mo</p>
         </div>
-        <div className="bg-navy-800 rounded-xl p-4 text-center">
-          <p className="text-navy-400 text-xs mb-1">Interest Paid</p>
-          <p className="text-white text-xl font-bold">${current.totalInterest.toLocaleString()}</p>
+        <div className="glass-card rounded-xl p-4 text-center">
+          <p className="text-[hsl(var(--muted-foreground))] text-xs mb-1">Interest Paid</p>
+          <p className="text-[hsl(var(--foreground))] text-xl font-bold">${current.totalInterest.toLocaleString()}</p>
         </div>
       </div>
 
       {/* Extra payment slider */}
-      <div className="bg-navy-800 rounded-xl p-5">
+      <div className="glass-card rounded-xl p-5">
         <div className="flex justify-between mb-2">
-          <label className="text-white font-medium text-sm">Extra Monthly Payment</label>
+          <label className="text-[hsl(var(--foreground))] font-medium text-sm">Extra Monthly Payment</label>
           <span className="text-amber-400 font-bold">${extraPayment}</span>
         </div>
         <input
@@ -143,7 +144,7 @@ export default function DebtPayoff() {
           onChange={e => setExtraPayment(Number(e.target.value))}
           className="w-full accent-amber-500"
         />
-        <div className="flex justify-between text-navy-400 text-xs mt-1">
+        <div className="flex justify-between text-[hsl(var(--muted-foreground))] text-xs mt-1">
           <span>$0</span>
           <span>$500</span>
         </div>
@@ -155,28 +156,28 @@ export default function DebtPayoff() {
       </div>
 
       {/* Debt list */}
-      <div className="bg-navy-800 rounded-xl p-5">
-        <h3 className="text-white font-semibold mb-4">
+      <div className="glass-card rounded-xl p-5">
+        <h3 className="text-[hsl(var(--foreground))] font-semibold mb-4">
           Your Debts — {method === 'snowball' ? 'Smallest First' : 'Highest Rate First'}
         </h3>
         <div className="space-y-3">
           {sortedDebts.map((debt, i) => (
-            <div key={debt.id} className="flex items-center gap-4 p-3 bg-navy-700 rounded-lg">
-              <div className="w-7 h-7 bg-amber-500 text-navy-900 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+            <div key={debt.id} className="flex items-center gap-4 p-3 bg-[hsl(var(--muted)/0.5)] rounded-lg">
+              <div className="w-7 h-7 bg-amber-500 text-[hsl(var(--primary-foreground))] rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                 {i + 1}
               </div>
               <div className="flex-1">
-                <p className="text-white text-sm font-medium">{debt.name}</p>
-                <p className="text-navy-400 text-xs">
+                <p className="text-[hsl(var(--foreground))] text-sm font-medium">{debt.name}</p>
+                <p className="text-[hsl(var(--muted-foreground))] text-xs">
                   {debt.rate > 0 ? `${debt.rate}% APR` : 'No interest'} · Min ${debt.minPayment}/mo
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-white font-bold text-sm">${debt.balance.toLocaleString()}</p>
+                <p className="text-[hsl(var(--foreground))] font-bold text-sm">${debt.balance.toLocaleString()}</p>
               </div>
               <button
                 onClick={() => setDebts(p => p.filter(d => d.id !== debt.id))}
-                className="text-navy-500 hover:text-red-400 text-xs transition-colors"
+                className="text-[hsl(var(--muted-foreground))] hover:text-red-400 text-xs transition-colors"
               >✕</button>
             </div>
           ))}
@@ -185,20 +186,20 @@ export default function DebtPayoff() {
         {/* Add debt form */}
         <form onSubmit={addDebt} className="flex flex-wrap gap-2 mt-4">
           <input placeholder="Debt name" value={newDebt.name} onChange={e => setNewDebt(p => ({ ...p, name: e.target.value }))}
-            className="flex-1 min-w-24 bg-navy-700 border border-navy-600 text-white placeholder-navy-400 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
+            className="flex-1 min-w-24 bg-[hsl(var(--muted)/0.5)] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
           <input type="number" placeholder="Balance $" value={newDebt.balance} onChange={e => setNewDebt(p => ({ ...p, balance: e.target.value }))}
-            className="w-24 bg-navy-700 border border-navy-600 text-white placeholder-navy-400 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
+            className="w-24 bg-[hsl(var(--muted)/0.5)] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
           <input type="number" placeholder="Rate %" value={newDebt.rate} onChange={e => setNewDebt(p => ({ ...p, rate: e.target.value }))}
-            className="w-20 bg-navy-700 border border-navy-600 text-white placeholder-navy-400 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
+            className="w-20 bg-[hsl(var(--muted)/0.5)] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
           <input type="number" placeholder="Min $" value={newDebt.minPayment} onChange={e => setNewDebt(p => ({ ...p, minPayment: e.target.value }))}
-            className="w-20 bg-navy-700 border border-navy-600 text-white placeholder-navy-400 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
-          <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-navy-900 font-semibold px-4 py-2 rounded-lg text-xs transition-colors">Add</button>
+            className="w-20 bg-[hsl(var(--muted)/0.5)] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500" />
+          <button type="submit" className="bg-amber-500 hover:bg-amber-600 text-[hsl(var(--primary-foreground))] font-semibold px-4 py-2 rounded-lg text-xs transition-colors">Add</button>
         </form>
       </div>
 
       <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
         <p className="text-amber-400 font-semibold text-sm mb-1">💡 Court debt tip</p>
-        <p className="text-navy-200 text-sm">Most court fines can be reduced or put on a payment plan. Legal aid organizations help for free. Paying even $50/month shows good faith and can prevent license suspension or re-incarceration.</p>
+        <p className="text-[hsl(var(--foreground)/0.8)] text-sm">Most court fines can be reduced or put on a payment plan. Legal aid organizations help for free. Paying even $50/month shows good faith and can prevent license suspension or re-incarceration.</p>
       </div>
     </div>
   )

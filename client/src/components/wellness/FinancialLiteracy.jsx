@@ -275,11 +275,11 @@ function ModuleCard({ module, isCompleted, onClick }) {
         <span className="text-3xl">{module.icon}</span>
         {isCompleted && <span className="text-green-400 text-xs bg-green-500/20 px-2 py-1 rounded-full">✓ Done</span>}
       </div>
-      <p className="text-white font-semibold mb-1">{module.title}</p>
+      <p className="text-[hsl(var(--foreground))] font-semibold mb-1">{module.title}</p>
       <div className="flex items-center gap-2">
         <span className={`text-xs font-medium ${textMap[module.color]}`}>{module.category}</span>
-        <span className="text-navy-500 text-xs">·</span>
-        <span className="text-navy-400 text-xs">{module.duration} read</span>
+        <span className="text-[hsl(var(--muted-foreground))] text-xs">·</span>
+        <span className="text-[hsl(var(--muted-foreground))] text-xs">{module.duration} read</span>
       </div>
     </button>
   )
@@ -291,28 +291,28 @@ function ModuleReader({ module, onComplete, onBack }) {
 
   function renderContent(text) {
     return text.split('\n\n').map((para, i) => {
-      const formatted = para.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>')
-      return <p key={i} className="text-navy-200 text-sm leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: formatted }} />
+      const formatted = para.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[hsl(var(--foreground))]">$1</strong>')
+      return <p key={i} className="text-[hsl(var(--foreground)/0.8)] text-sm leading-relaxed mb-3" dangerouslySetInnerHTML={{ __html: formatted }} />
     })
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="text-navy-400 hover:text-white transition-colors text-sm">← Back</button>
-        <span className="text-navy-600">·</span>
-        <span className="text-navy-400 text-sm">{module.category}</span>
+        <button onClick={onBack} className="text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] transition-colors text-sm">← Back</button>
+        <span className="text-[hsl(var(--muted-foreground))]">·</span>
+        <span className="text-[hsl(var(--muted-foreground))] text-sm">{module.category}</span>
       </div>
 
-      <div className="bg-navy-800 rounded-2xl p-6">
+      <div className="glass-card rounded-2xl p-6">
         <div className="flex items-center gap-4 mb-4">
           <span className="text-4xl">{module.icon}</span>
           <div>
-            <h2 className="text-white text-xl font-bold">{module.title}</h2>
-            <p className="text-navy-400 text-sm">{module.duration} read</p>
+            <h2 className="text-[hsl(var(--foreground))] text-xl font-bold">{module.title}</h2>
+            <p className="text-[hsl(var(--muted-foreground))] text-sm">{module.duration} read</p>
           </div>
         </div>
-        <p className="text-navy-200 text-sm leading-relaxed italic border-l-2 border-amber-500 pl-4">
+        <p className="text-[hsl(var(--foreground)/0.8)] text-sm leading-relaxed italic border-l-2 border-amber-500 pl-4">
           {module.intro}
         </p>
       </div>
@@ -323,13 +323,13 @@ function ModuleReader({ module, onComplete, onBack }) {
           <button
             key={i}
             onClick={() => setSection(i)}
-            className={`flex-1 h-1.5 rounded-full transition-colors ${i <= section ? 'bg-amber-500' : 'bg-navy-700'}`}
+            className={`flex-1 h-1.5 rounded-full transition-colors ${i <= section ? 'bg-amber-500' : 'bg-[hsl(var(--muted)/0.5)]'}`}
           />
         ))}
       </div>
 
       {/* Current section */}
-      <div className="bg-navy-800 rounded-xl p-6">
+      <div className="glass-card rounded-xl p-6">
         <h3 className="text-amber-400 font-semibold mb-4">{module.sections[section].heading}</h3>
         {renderContent(module.sections[section].content)}
       </div>
@@ -339,7 +339,7 @@ function ModuleReader({ module, onComplete, onBack }) {
         {section > 0 && (
           <button
             onClick={() => setSection(s => s - 1)}
-            className="flex-1 bg-navy-800 hover:bg-navy-700 text-white py-3 rounded-xl text-sm transition-colors"
+            className="flex-1 glass-card hover:bg-[hsl(var(--muted)/0.5)] text-[hsl(var(--foreground))] py-3 rounded-xl text-sm transition-colors"
           >
             ← Previous
           </button>
@@ -347,14 +347,14 @@ function ModuleReader({ module, onComplete, onBack }) {
         {section < total - 1 ? (
           <button
             onClick={() => setSection(s => s + 1)}
-            className="flex-1 bg-amber-500 hover:bg-amber-600 text-navy-900 font-semibold py-3 rounded-xl text-sm transition-colors"
+            className="flex-1 bg-amber-500 hover:bg-amber-600 text-[hsl(var(--primary-foreground))] font-semibold py-3 rounded-xl text-sm transition-colors"
           >
             Next →
           </button>
         ) : (
           <button
             onClick={onComplete}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl text-sm transition-colors"
+            className="flex-1 bg-green-600 hover:bg-green-700 text-[hsl(var(--foreground))] font-semibold py-3 rounded-xl text-sm transition-colors"
           >
             ✓ Mark Complete
           </button>
@@ -388,12 +388,12 @@ export default function FinancialLiteracy() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">Financial Literacy</h2>
-        <span className="text-navy-400 text-sm">{completed.size}/{MODULES.length} completed</span>
+        <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Financial Literacy</h2>
+        <span className="text-[hsl(var(--muted-foreground))] text-sm">{completed.size}/{MODULES.length} completed</span>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full bg-navy-700 rounded-full h-2">
+      <div className="w-full bg-[hsl(var(--muted)/0.5)] rounded-full h-2">
         <div
           className="h-2 rounded-full bg-amber-500 transition-all duration-700"
           style={{ width: `${(completed.size / MODULES.length) * 100}%` }}
@@ -407,7 +407,7 @@ export default function FinancialLiteracy() {
             key={cat}
             onClick={() => setFilter(cat)}
             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-              filter === cat ? 'bg-amber-500 text-navy-900 font-medium' : 'bg-navy-800 text-navy-300 hover:text-white'
+              filter === cat ? 'bg-amber-500 text-[hsl(var(--primary-foreground))] font-medium' : 'glass-card text-[hsl(var(--foreground)/0.7)] hover:text-[hsl(var(--foreground))]'
             }`}
           >
             {cat}

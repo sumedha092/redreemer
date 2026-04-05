@@ -2,94 +2,56 @@
 
 > Redeem what was lost. Redream what's possible.
 
-SMS-based financial empowerment platform for homeless individuals and people recently released from prison. One phone number. Text anything. Gemini responds with real local resources, tracks your 8-step progress toward housing stability, and proactively reaches out when it matters.
+Redreemer is a free SMS-based financial empowerment platform for two of America's most financially excluded populations — people experiencing homelessness and people recently released from prison.
+
+One phone number. Text anything. Gemini responds with real local resources, tracks your progress on an 8-step ladder, and proactively reaches out when it matters.
 
 ---
 
-## What It Does
+## How It Works
 
-- **SMS layer** — Text the Redreemer number in plain English. Gemini routes you to the right experience (homeless or reentry), answers with real local resources via Google Places API, and tracks your progress automatically.
-- **8-step ladder** — Two ladders (homeless + reentry), each guiding users from first contact to financial stability.
-- **Proactive outreach** — Weather alerts below 35°F, appointment reminders, 5-day check-ins.
-- **ElevenLabs voice milestones** — Warm human voice messages when users complete major steps.
-- **Caseworker dashboard** — React app with Auth0 login, client management, financial health scores, analytics, and demo mode.
-- **Financial Wellness suite** — Budget tracker, net worth calculator, emergency fund planner, debt payoff calculator, insurance education, savings goals, risk assessment, financial literacy modules.
+1. Someone texts the Redreemer number
+2. Gemini asks: "Are you currently homeless, recently released from prison, or both?"
+3. Based on the answer, Gemini routes them to the correct experience
+4. From that point: text anything in plain English, get specific local answers
+5. Progress is tracked automatically. Weekly Sunday updates. ElevenLabs voice messages at milestones.
 
 ---
 
-## Stack
+## Tech Stack
 
 | Tool | Role |
 |------|------|
-| Node.js + Express | Backend |
-| React + Tailwind CSS | Caseworker dashboard |
-| Supabase | Database + RLS |
-| Twilio | SMS in/out + voice delivery |
+| Twilio | SMS in/out + voice clip delivery |
 | Gemini API (gemini-1.5-flash) | All AI — routing, responses, weekly summaries |
 | ElevenLabs | Milestone voice messages |
-| Auth0 | Caseworker auth + role-based access |
-| Google Places API | Real nearby resources |
-| Recharts | Analytics charts |
+| Auth0 | Caseworker dashboard auth + role-based access |
+| Supabase | Database + Row Level Security |
+| React + Tailwind | Caseworker dashboard |
+| Node.js + Express | Backend |
 | Vercel | Deployment |
 
 ---
 
 ## Setup
 
-### 1. Clone
+### 1. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/redreemer.git
-cd redreemer
-```
-
-### 2. Server
-
-```bash
-cd server
+# Server
+cd redreemer/server
 npm install
-cp .env.example .env   # fill in your keys
-npm run dev
-```
 
-### 3. Client
-
-```bash
-cd client
+# Client
+cd redreemer/client
 npm install
-cp .env.example .env   # fill in your keys
-npm run dev
 ```
 
-### 4. Database
+### 2. Configure environment variables
 
-Run `supabase/schema.sql` in your Supabase SQL editor, then optionally `supabase/seed.sql` for demo data.
-
-Add the `financial_health_score` column if upgrading:
-```sql
-ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_health_score integer default 0;
-```
-
-### 5. Twilio Webhook
-
-```bash
-ngrok http 3001
-```
-
-Set your Twilio number webhook to:
-```
-https://your-ngrok-url.ngrok.io/sms/incoming
-```
-Method: HTTP POST
-
----
-
-## Environment Variables
-
-### server/.env
+Copy `server/.env` and fill in your keys:
 
 ```
-PORT=3001
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
@@ -103,32 +65,80 @@ AUTH0_AUDIENCE=
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 WEATHER_API_KEY=
-GOOGLE_PLACES_API_KEY=
 ```
 
-### client/.env
+Copy `client/.env` and fill in:
 
 ```
-VITE_MOCK_MODE=false
 VITE_AUTH0_DOMAIN=
 VITE_AUTH0_CLIENT_ID=
 VITE_AUTH0_AUDIENCE=
-VITE_API_URL=http://localhost:3001
 ```
+
+### 3. Set up Supabase
+
+Run `supabase/schema.sql` in your Supabase SQL editor, then `supabase/seed.sql` for demo data.
+
+### 4. Connect Twilio webhook
+
+Start the server and expose it with ngrok:
+
+```bash
+ngrok http 3001
+```
+
+Set your Twilio webhook URL to:
+```
+https://your-ngrok-url.ngrok.io/sms/incoming
+```
+Method: POST
+
+### 5. Run
+
+```bash
+# Server
+cd server && npm run dev
+
+# Client (separate terminal)
+cd client && npm run dev
+```
+
+---
+
+## Auth0 Setup
+
+1. Create an Auth0 application (Single Page Application for the dashboard)
+2. Create an Auth0 API with your audience URL
+3. Add a custom claim to your Auth0 Action (Login flow):
+   ```javascript
+   exports.onExecutePostLogin = async (event, api) => {
+     api.idToken.setCustomClaim('https://redreemer.app/role', event.user.app_metadata.role);
+     api.accessToken.setCustomClaim('https://redreemer.app/role', event.user.app_metadata.role);
+   };
+   ```
+4. Set `app_metadata.role` to `caseworker` or `admin` for each user in Auth0 dashboard
 
 ---
 
 ## Demo
 
-Set `VITE_MOCK_MODE=true` in `client/.env` to run the dashboard with mock data (Marcus, James, Darnell) without any backend.
+Marcus (homeless, Step 4) and James (reentry, Step 3) are pre-loaded in the seed data.
 
-For a live demo, click "Run Demo" on the Analytics page to create Alex — a pre-scripted 3-week conversation showing survival → stability → empowerment.
+**Demo SMS flow:**
+- Text your Twilio number: "I'm hungry and cold tonight"
+- Redreemer responds in ~8 seconds with shelter + food bank
+
+**Demo dashboard:**
+- Log in at `localhost:5173`
+- See Marcus and James in the client list
+- Play ElevenLabs voice clips from their milestone history
 
 ---
 
 ## Hackathon Tracks
 
-- **State Farm Financial Wellness** — Financial literacy through every SMS interaction, 8-step ladder, accessible to most excluded populations
-- **Google Agentic AI** — Gemini reads context, reasons about user situation, routes, selects resources, tracks progress, proactively reaches out
-- **Best Use of ElevenLabs** — Milestone voice messages at key steps
-- **Best Use of Auth0** — Two roles (caseworker + admin), RLS enforced at database level
+- **Best Use of Gemini** — Gemini IS Redreemer. Every response, routing decision, resource match, and proactive message runs through Gemini. Agentic architecture: reads context, reasons about situation, selects resources, tracks progress, proactively reaches out.
+- **Best Use of ElevenLabs** — Milestone voice messages are the emotional peak. Play button prominent in dashboard.
+- **Best Use of Auth0** — Two roles (caseworker + admin), RLS enforced at database level, Security & Privacy panel in dashboard.
+- **State Farm Financial Wellness** — Financial literacy through every interaction, 8-step ladder, accessible to most excluded populations.
+- **Google Agentic AI** — Gemini reads context, reasons, routes, selects resources, tracks progress, proactively reaches out without being prompted.

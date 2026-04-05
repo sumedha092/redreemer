@@ -32,7 +32,7 @@ export default function AddClientForm({ onClientAdded }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="w-full border border-dashed border-navy-600 hover:border-amber-500 text-navy-400 hover:text-amber-500 rounded-lg py-2 text-sm transition-colors"
+        className="w-full border border-dashed border-[hsl(var(--border))] hover:border-amber-500 text-[hsl(var(--muted-foreground))] hover:text-amber-500 rounded-lg py-2 text-sm transition-colors"
       >
         + Add Client
       </button>
@@ -40,26 +40,26 @@ export default function AddClientForm({ onClientAdded }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-navy-800 rounded-lg p-3 space-y-2">
+    <form onSubmit={handleSubmit} className="bg-[hsl(var(--card))] rounded-lg p-3 space-y-2">
       <input
         type="tel"
         value={phone}
         onChange={e => setPhone(e.target.value)}
         placeholder="+1 (555) 000-0000"
-        className="w-full bg-navy-700 border border-navy-600 text-white placeholder-navy-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+        className="w-full bg-[hsl(var(--muted)/0.5)] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
       />
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={status === 'adding'}
-          className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-navy-900 font-semibold py-1.5 rounded-lg text-sm transition-colors"
+          className="flex-1 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-[hsl(var(--foreground))] font-semibold py-1.5 rounded-lg text-sm transition-colors"
         >
           {status === 'adding' ? 'Adding...' : 'Add & Send Welcome'}
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="px-3 text-navy-400 hover:text-white text-sm"
+          className="px-3 text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] text-sm"
         >
           Cancel
         </button>

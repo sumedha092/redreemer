@@ -1,30 +1,23 @@
 # Dependencies
 node_modules/
-*/node_modules/
 
-# Environment variables — never commit these
+# Env & secrets
 .env
 .env.local
-.env.production
-server/.env
-client/.env
+.env.*.local
+*.pem
 
-# Build output
+# Build & cache
 dist/
 build/
-client/dist/
-
-# Logs
+.cache/
 *.log
-npm-debug.log*
-
-# OS
 .DS_Store
-Thumbs.db
 
-# Generated voice clips (large binary files)
-server/public/clips/
+# Editor
+.idea/
+.vscode/*
+!.vscode/extensions.json
 
-# Vite cache
-client/.vite/
-node_modules/.vite/
+# Vite
+*.local

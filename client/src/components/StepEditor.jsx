@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { useAuth0 } from '@auth0/auth0-react'
 import { createApiClient } from '../lib/api.js'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+
+const isMock = import.meta.env.VITE_MOCK_MODE === 'true'
 
 export default function StepEditor({ client, onUpdate }) {
   const { getAccessTokenSilently } = useAuth0()
   const [step, setStep] = useState(client.current_step || 1)
   const [status, setStatus] = useState(null)
 
-  async function handleChange(e) {
-    const newStep = parseInt(e.target.value)
+  async function handleClick(newStep) {
+    if (newStep === step || isMock) { setStep(newStep); return }
     setStep(newStep)
     setStatus('saving')
     try {
@@ -18,28 +21,37 @@ export default function StepEditor({ client, onUpdate }) {
       setStatus('saved')
       if (onUpdate) onUpdate(newStep)
       setTimeout(() => setStatus(null), 2000)
-    } catch (err) {
-      console.error('Step update error:', err)
+    } catch {
       setStatus('error')
       setTimeout(() => setStatus(null), 2000)
     }
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <label className="text-white font-semibold text-sm">Current Step:</label>
-      <select
-        value={step}
-        onChange={handleChange}
-        className="bg-navy-800 border border-navy-600 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500"
-      >
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-semibold text-[hsl(var(--foreground))]">Set Current Step</span>
+        {status === 'saving' && <Loader2 className="w-3.5 h-3.5 text-[hsl(var(--primary))] animate-spin" />}
+        {status === 'saved' && <span className="flex items-center gap-1 text-xs text-green-400"><CheckCircle2 className="w-3 h-3" />Saved</span>}
+        {status === 'error' && <span className="text-xs text-red-400">Error saving</span>}
+      </div>
+      <div className="flex gap-1.5 flex-wrap">
         {[1,2,3,4,5,6,7,8].map(n => (
-          <option key={n} value={n}>Step {n}</option>
+          <button
+            key={n}
+            onClick={() => handleClick(n)}
+            className={`w-9 h-9 rounded-lg text-sm font-semibold transition-all ${
+              n === step
+                ? 'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm'
+                : n < step
+                ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                : 'bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted)/0.7)] border border-[hsl(var(--border))]'
+            }`}
+          >
+            {n}
+          </button>
         ))}
-      </select>
-      {status === 'saving' && <span className="text-amber-400 text-xs">Saving...</span>}
-      {status === 'saved' && <span className="text-green-400 text-xs">Saved</span>}
-      {status === 'error' && <span className="text-red-400 text-xs">Error</span>}
+      </div>
     </div>
   )
 }

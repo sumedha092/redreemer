@@ -88,10 +88,10 @@ function CostEstimator({ insurance }) {
   if (!insurance.costCalc) return null
   const estimated = insurance.costCalc.base + (propertyValue / 1000) * insurance.costCalc.perThousand
   return (
-    <div className="bg-navy-700 rounded-xl p-4 mt-4">
-      <h4 className="text-white font-medium text-sm mb-3">Cost Estimator</h4>
+    <div className="bg-[hsl(var(--muted)/0.5)] rounded-xl p-4 mt-4">
+      <h4 className="text-[hsl(var(--foreground))] font-medium text-sm mb-3">Cost Estimator</h4>
       <div className="flex items-center gap-3 mb-2">
-        <label className="text-navy-300 text-xs whitespace-nowrap">Property value: ${propertyValue.toLocaleString()}</label>
+        <label className="text-[hsl(var(--foreground)/0.7)] text-xs whitespace-nowrap">Property value: ${propertyValue.toLocaleString()}</label>
         <input
           type="range" min="500" max="10000" step="500"
           value={propertyValue}
@@ -109,17 +109,17 @@ export default function InsuranceGuide() {
   const ins = INSURANCE_TYPES.find(i => i.id === selected)
 
   const colorMap = {
-    amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', btn: 'bg-amber-500 text-navy-900' },
-    green: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', btn: 'bg-green-600 text-white' },
-    blue:  { bg: 'bg-blue-500/10',  border: 'border-blue-500/30',  text: 'text-blue-400',  btn: 'bg-blue-600 text-white' },
-    purple:{ bg: 'bg-purple-500/10',border: 'border-purple-500/30',text: 'text-purple-400',btn: 'bg-purple-600 text-white' },
+    amber: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', btn: 'bg-amber-500 text-[hsl(var(--primary-foreground))]' },
+    green: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', btn: 'bg-green-600 text-[hsl(var(--foreground))]' },
+    blue:  { bg: 'bg-blue-500/10',  border: 'border-blue-500/30',  text: 'text-blue-400',  btn: 'bg-blue-600 text-[hsl(var(--foreground))]' },
+    purple:{ bg: 'bg-purple-500/10',border: 'border-purple-500/30',text: 'text-purple-400',btn: 'bg-purple-600 text-[hsl(var(--foreground))]' },
   }
   const c = colorMap[ins.color]
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">Insurance Education</h2>
-      <p className="text-navy-400 text-sm">Insurance explained in plain English — no jargon, no sales pitch.</p>
+      <h2 className="text-xl font-bold text-[hsl(var(--foreground))]">Insurance Education</h2>
+      <p className="text-[hsl(var(--muted-foreground))] text-sm">Insurance explained in plain English — no jargon, no sales pitch.</p>
 
       {/* Type selector */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -130,36 +130,36 @@ export default function InsuranceGuide() {
             className={`p-4 rounded-xl border-2 text-left transition-all ${
               selected === type.id
                 ? `${colorMap[type.color].bg} ${colorMap[type.color].border}`
-                : 'bg-navy-800 border-navy-700 hover:border-navy-500'
+                : 'glass-card border-[hsl(var(--border))] hover:border-[hsl(var(--border))]'
             }`}
           >
             <div className="text-2xl mb-2">{type.icon}</div>
-            <p className="text-white font-medium text-sm">{type.name}</p>
-            <p className="text-navy-400 text-xs mt-1">{type.avgCost}</p>
+            <p className="text-[hsl(var(--foreground))] font-medium text-sm">{type.name}</p>
+            <p className="text-[hsl(var(--muted-foreground))] text-xs mt-1">{type.avgCost}</p>
           </button>
         ))}
       </div>
 
       {/* Detail panel */}
-      <div className="bg-navy-800 rounded-2xl p-6 space-y-5">
+      <div className="glass-card rounded-2xl p-6 space-y-5">
         <div className="flex items-start gap-4">
           <span className="text-4xl">{ins.icon}</span>
           <div>
-            <h3 className="text-white text-xl font-bold">{ins.name}</h3>
+            <h3 className="text-[hsl(var(--foreground))] text-xl font-bold">{ins.name}</h3>
             <p className={`${c.text} font-medium`}>{ins.tagline}</p>
           </div>
         </div>
 
         {/* Why you need it */}
         <div>
-          <h4 className="text-white font-semibold text-sm mb-2">Why you need it</h4>
-          <p className="text-navy-200 text-sm leading-relaxed">{ins.why}</p>
+          <h4 className="text-[hsl(var(--foreground))] font-semibold text-sm mb-2">Why you need it</h4>
+          <p className="text-[hsl(var(--foreground)/0.8)] text-sm leading-relaxed">{ins.why}</p>
         </div>
 
         {/* Who needs it */}
         <div className={`${c.bg} border ${c.border} rounded-xl p-4`}>
           <h4 className={`${c.text} font-semibold text-sm mb-1`}>Who needs it</h4>
-          <p className="text-navy-200 text-sm">{ins.whoNeeds}</p>
+          <p className="text-[hsl(var(--foreground)/0.8)] text-sm">{ins.whoNeeds}</p>
         </div>
 
         {/* What it covers */}
@@ -168,7 +168,7 @@ export default function InsuranceGuide() {
             <h4 className="text-green-400 font-semibold text-sm mb-2">✓ What it covers</h4>
             <ul className="space-y-1">
               {ins.whatCovers.map((item, i) => (
-                <li key={i} className="text-navy-200 text-sm flex items-start gap-2">
+                <li key={i} className="text-[hsl(var(--foreground)/0.8)] text-sm flex items-start gap-2">
                   <span className="text-green-400 mt-0.5">•</span>{item}
                 </li>
               ))}
@@ -178,7 +178,7 @@ export default function InsuranceGuide() {
             <h4 className="text-red-400 font-semibold text-sm mb-2">✗ What it doesn't cover</h4>
             <ul className="space-y-1">
               {ins.whatDoesnt.map((item, i) => (
-                <li key={i} className="text-navy-200 text-sm flex items-start gap-2">
+                <li key={i} className="text-[hsl(var(--foreground)/0.8)] text-sm flex items-start gap-2">
                   <span className="text-red-400 mt-0.5">•</span>{item}
                 </li>
               ))}
@@ -187,8 +187,8 @@ export default function InsuranceGuide() {
         </div>
 
         {/* Cost */}
-        <div className="bg-navy-700 rounded-xl p-4">
-          <h4 className="text-white font-semibold text-sm mb-1">Average cost</h4>
+        <div className="bg-[hsl(var(--muted)/0.5)] rounded-xl p-4">
+          <h4 className="text-[hsl(var(--foreground))] font-semibold text-sm mb-1">Average cost</h4>
           <p className={`${c.text} font-bold text-lg`}>{ins.avgCost}</p>
         </div>
 
@@ -198,13 +198,13 @@ export default function InsuranceGuide() {
         {/* For our users */}
         <div className={`${c.bg} border ${c.border} rounded-xl p-4`}>
           <h4 className={`${c.text} font-semibold text-sm mb-2`}>For people using Redreemer</h4>
-          <p className="text-navy-200 text-sm leading-relaxed">{ins.forUs}</p>
+          <p className="text-[hsl(var(--foreground)/0.8)] text-sm leading-relaxed">{ins.forUs}</p>
         </div>
 
         {/* How to get it */}
         <div>
-          <h4 className="text-white font-semibold text-sm mb-2">How to get it</h4>
-          <p className="text-navy-200 text-sm leading-relaxed">{ins.howToGet}</p>
+          <h4 className="text-[hsl(var(--foreground))] font-semibold text-sm mb-2">How to get it</h4>
+          <p className="text-[hsl(var(--foreground)/0.8)] text-sm leading-relaxed">{ins.howToGet}</p>
         </div>
       </div>
     </div>
