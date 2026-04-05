@@ -28,3 +28,5 @@ server/public/clips/
 # Vite cache
 client/.vite/
 node_modules/.vite/
+.vercel
+.env*.local
