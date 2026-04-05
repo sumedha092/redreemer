@@ -38,11 +38,11 @@ export default function JourneySection() {
   return (
     <section ref={sectionRef} className="py-28 px-6">
       <div className="max-w-7xl mx-auto text-center mb-16">
-        <p className="text-primary text-xs font-semibold tracking-[0.15em] uppercase mb-3">The Journey</p>
-        <h2 className="font-heading font-bold text-4xl md:text-5xl text-foreground mb-4">
+        <p className="text-xs font-semibold tracking-[0.15em] uppercase mb-3" style={{ color: '#f5e000' }}>The Journey</p>
+        <h2 className="font-heading font-bold text-4xl md:text-5xl text-white mb-4">
           We walk with you, every step.
         </h2>
-        <p className="text-muted-foreground text-lg">From survival to independence.</p>
+        <p className="text-gray-400 text-lg">From survival to independence.</p>
       </div>
 
       <div className="max-w-7xl mx-auto overflow-x-auto pb-4">
@@ -54,45 +54,37 @@ export default function JourneySection() {
             return (
               <div key={i} className="flex items-center flex-1">
                 <div className="flex flex-col items-center text-center w-24">
-                  {/* Step circle */}
                   <div
                     className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 ${
                       revealed
                         ? s.milestone
-                          ? 'bg-primary text-primary-foreground ring-4 ring-primary/30'
-                          : 'bg-primary text-primary-foreground'
-                        : 'border-2 border-border text-muted-foreground opacity-30'
+                          ? 'ring-4 ring-yellow-300/30'
+                          : ''
+                        : 'border-2 border-white/20 opacity-30'
                     }`}
-                    style={{ transitionDelay: `${i * 40}ms` }}
+                    style={revealed ? {
+                      background: s.milestone
+                        ? 'linear-gradient(135deg, #f5e000, #ffe44d)'
+                        : 'rgba(245,224,0,0.15)',
+                      color: s.milestone ? '#111827' : '#f5e000',
+                    } : { color: '#6b7280' }}
+                    {...{ 'data-delay': `${i * 40}ms` }}
                   >
                     <s.icon className="w-5 h-5" />
                   </div>
-
-                  {/* Labels */}
-                  <span
-                    className={`text-xs font-medium mt-2 transition-all duration-500 ${revealed ? 'text-foreground opacity-100 translate-y-0' : 'text-muted-foreground opacity-0 translate-y-2'}`}
-                    style={{ transitionDelay: `${i * 40 + 100}ms` }}
-                  >
+                  <span className={`text-xs font-medium mt-2 transition-all duration-500 ${revealed ? 'text-white opacity-100 translate-y-0' : 'text-gray-500 opacity-0 translate-y-2'}`}
+                    style={{ transitionDelay: `${i * 40 + 100}ms` }}>
                     {s.label}
                   </span>
-                  <span
-                    className={`text-[10px] transition-all duration-500 ${revealed ? 'text-muted-foreground opacity-100' : 'opacity-0'}`}
-                    style={{ transitionDelay: `${i * 40 + 150}ms` }}
-                  >
+                  <span className={`text-[10px] transition-all duration-500 ${revealed ? 'text-gray-400 opacity-100' : 'opacity-0'}`}
+                    style={{ transitionDelay: `${i * 40 + 150}ms` }}>
                     {s.sub}
                   </span>
                 </div>
-
-                {/* Connector line */}
                 {i < steps.length - 1 && (
-                  <div className="flex-1 h-0.5 bg-border relative overflow-hidden">
-                    <div
-                      className="absolute inset-y-0 left-0 bg-primary transition-all duration-500 ease-out"
-                      style={{
-                        width: lineActive ? '100%' : '0%',
-                        transitionDelay: `${i * 220 + 100}ms`,
-                      }}
-                    />
+                  <div className="flex-1 h-0.5 bg-white/10 relative overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 transition-all duration-500 ease-out"
+                      style={{ width: lineActive ? '100%' : '0%', background: '#f5e000', transitionDelay: `${i * 220 + 100}ms` }} />
                   </div>
                 )}
               </div>

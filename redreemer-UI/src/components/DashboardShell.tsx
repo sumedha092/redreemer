@@ -1,11 +1,21 @@
-import { useState, ReactNode, useEffect } from 'react';
+import { useState, ReactNode } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useAIAlerts } from '@/context/AIAlertContext';
 import Logo from '@/components/Logo';
-import { onAIAlert } from '@/components/AIInsightPanel';
 import {
   Bell, Search, Settings, HelpCircle, LogOut, User,
-  X, ChevronRight, Menu, Home, AlertTriangle
+  X, ChevronRight, Menu, Home, AlertTriangle, Globe
 } from 'lucide-react';
+
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'zh', label: '中文' },
+  { code: 'vi', label: 'Tiếng Việt' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'so', label: 'Soomaali' },
+  { code: 'ht', label: 'Kreyòl' },
+];
 
 interface NavItem { icon: typeof Home; label: string; id: string; }
 
@@ -20,27 +30,15 @@ interface Props {
 
 export default function DashboardShell({ children, activeTab, onTabChange, navItems, userName, userEmail }: Props) {
   const { logout, userType } = useAuth();
+  const { alerts, markRead, unreadCount } = useAIAlerts();
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifOpen, setNotifOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [aiAlerts, setAiAlerts] = useState<{ tool: string; message: string; time: string }[]>([]);
-
-  // Listen for AI high-risk alerts from any wellness tool
-  useEffect(() => {
-    return onAIAlert((tool, riskLevel, message) => {
-      if (riskLevel === 'high') {
-        setAiAlerts(prev => {
-          // Deduplicate by tool
-          const filtered = prev.filter(a => a.tool !== tool);
-          return [{ tool, message, time: 'Just now' }, ...filtered].slice(0, 5);
-        });
-      }
-    });
-  }, []);
-
+  const [langOpen, setLangOpen] = useState(false);
+  const [selectedLang, setSelectedLang] = useState('en');
   const initials = userName?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
 
   const accentBg = 'bg-yellow-300';
@@ -153,12 +151,34 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
           </div>
 
           <div className="ml-auto flex items-center gap-1.5">
+            {/* Language selector */}
+            <div className="relative">
+              <button onClick={() => { setLangOpen(v => !v); setNotifOpen(false); setProfileOpen(false); }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors text-xs font-medium">
+                <Globe size={14} />
+                <span className="hidden sm:inline">{LANGUAGES.find(l => l.code === selectedLang)?.label}</span>
+              </button>
+              {langOpen && (
+                <div className="absolute right-0 top-10 w-40 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
+                  {LANGUAGES.map(l => (
+                    <button key={l.code} onClick={() => { setSelectedLang(l.code); setLangOpen(false); }}
+                      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+                        selectedLang === l.code ? 'bg-yellow-50 text-gray-900 font-semibold' : 'text-gray-700 hover:bg-gray-50'
+                      }`}>
+                      {l.label}
+                      {selectedLang === l.code && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Notifications */}
             <div className="relative">
               <button onClick={() => { setNotifOpen(v => !v); setProfileOpen(false); }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors relative">
                 <Bell size={16} />
-                {aiAlerts.length > 0
+                {unreadCount > 0
                   ? <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   : <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-yellow-300" />
                 }
@@ -166,33 +186,31 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
               {notifOpen && (
                 <div className="absolute right-0 top-10 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 animate-fade-in overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <span className="font-semibold text-sm text-gray-900">Notifications</span>
+                    <span className="font-semibold text-sm text-gray-900">Notifications {unreadCount > 0 && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>}</span>
                     <button onClick={() => setNotifOpen(false)}><X size={14} className="text-gray-400" /></button>
                   </div>
                   {/* AI risk alerts — shown first */}
-                  {aiAlerts.map((a, i) => (
-                    <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-50 bg-red-50/60">
-                      <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-semibold text-red-700">AI Alert: {a.tool.charAt(0).toUpperCase() + a.tool.slice(1)}</p>
-                        <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{a.message}</p>
-                        <p className="text-[10px] text-gray-400 mt-1">{a.time}</p>
+                  {alerts.slice(0, 5).map(a => (
+                    <div key={a.id} onClick={() => markRead(a.id)}
+                      className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${!a.read ? (a.level === 'danger' ? 'bg-red-50/60' : 'bg-yellow-50/60') : ''}`}>
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${a.level === 'danger' ? 'bg-red-100' : 'bg-yellow-100'}`}>
+                        <AlertTriangle size={12} className={a.level === 'danger' ? 'text-red-500' : 'text-yellow-600'} />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs font-semibold mb-0.5 ${a.level === 'danger' ? 'text-red-700' : 'text-yellow-700'}`}>
+                          AI {a.level === 'danger' ? 'Risk Alert' : 'Insight'} · {a.tool}
+                        </p>
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-2">{a.message}</p>
+                        <p className="text-[10px] text-gray-400 mt-1">{a.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                      {!a.read && <div className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0 mt-1.5" />}
                     </div>
                   ))}
-                  {[
-                    { text: 'New message from Marcus', time: '2m ago', unread: true },
-                    { text: 'James completed Step 3', time: '1h ago', unread: true },
-                    { text: 'Weekly report ready', time: '3h ago', unread: false },
-                  ].map((n, i) => (
-                    <div key={i} className={`px-4 py-3 border-b border-gray-50 last:border-0 flex items-start gap-3 ${n.unread ? 'bg-yellow-50/50' : ''}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${n.unread ? 'bg-yellow-400' : 'bg-transparent'}`} />
-                      <div>
-                        <p className="text-xs text-gray-800">{n.text}</p>
-                        <p className="text-[10px] text-gray-400 mt-0.5">{n.time}</p>
-                      </div>
+                  {alerts.length === 0 && (
+                    <div className="px-4 py-6 text-center text-xs text-gray-400">
+                      No alerts yet. AI monitors your finances in real time.
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
@@ -236,7 +254,7 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
 
         {/* Content — scrollable */}
         <main className="flex-1 overflow-y-auto min-h-0 bg-gray-50">
-          <div className="max-w-5xl mx-auto px-8 py-6">
+          <div className="max-w-7xl mx-auto px-6 py-5">
             {children}
           </div>
         </main>

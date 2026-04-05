@@ -2,12 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Users, BarChart2, Wallet, LogOut, Search, UserPlus, AlertTriangle,
   MessageSquare, Phone, Download, ChevronRight, Play, Pause, Bell,
-  Sun, Moon, X, Award, BookOpen, CheckCircle, Clock, TrendingUp,
+  X, Award, BookOpen, CheckCircle, Clock, TrendingUp,
   Shield, Target, Activity, ShieldCheck, RotateCcw
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useAnalytics, useSendMessage, useUpdateStep, useAddClient, useCrisisAlerts, useRunDemo } from '@/hooks/useClients';
-import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/components/Toast';
 import Modal from '@/components/Modal';
 import Logo from '@/components/Logo';
@@ -644,7 +643,6 @@ function AnalyticsView({ clients, useMock, onNavigateClients }: { clients: Clien
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const [view, setView] = useState<'clients' | 'analytics' | 'wellness'>('clients');
   const [selectedClientId, setSelectedClientId] = useState<string>('1');
   const [search, setSearch] = useState('');
@@ -730,9 +728,6 @@ export default function Dashboard() {
           </h1>
           {useMock && <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">Mock Mode</span>}
           <NotificationBell />
-          <button onClick={toggleTheme} className="w-9 h-9 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors" aria-label="Toggle theme">
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
         </header>
 
         {view === 'clients' ? (

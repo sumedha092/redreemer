@@ -28,10 +28,10 @@ export default function HeroSection() {
           </p>
 
           <div className="flex flex-wrap gap-3 mb-10">
-            <a href="https://wa.me/16812726392?text=Hi%2C%20I%20need%20help"
+            <a href="https://wa.me/14155238886?text=Hi%2C%20I%20need%20help"
               className="flex items-center gap-2.5 px-7 py-4 rounded-xl bg-primary text-primary-foreground font-semibold text-base hover:glow-amber transition-all">
               <Phone size={20} />
-              Text +1 (681) 272-6392
+              Text +1 (415) 523-8886
             </a>
             <button
               onClick={() => navigate('/signup')}

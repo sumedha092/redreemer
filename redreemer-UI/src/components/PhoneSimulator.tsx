@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Wifi, Battery, Signal } from 'lucide-react';
 import { api } from '@/lib/api';
+import ReplySpeechButton from '@/components/ReplySpeechButton';
 
 interface Message {
   role: string;
@@ -80,7 +81,7 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
         if (data?.userId) setPollKey(data.userId);
       } else {
         await api.post('/sms/incoming', new URLSearchParams({
-          From: clientPhone, Body: text, To: '+16812726392',
+          From: clientPhone, Body: text, To: '+14155238886',
         }), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
       }
 
@@ -175,6 +176,13 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
                       }`}
                     >
                       {msg.content}
+                      <div className="mt-1.5 pt-1.5 border-t border-white/10 flex justify-end">
+                        <ReplySpeechButton
+                          text={msg.content}
+                          variant={isUser ? 'phoneUser' : 'phoneDark'}
+                          listenLabel="Listen"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -203,7 +211,13 @@ export default function PhoneSimulator({ clientId, clientPhone, clientName }: Pr
             onChange={e => setInput(e.target.value)}
             placeholder="iMessage"
             disabled={sending}
-            className="flex-1 bg-[#3a3a3c] text-white placeholder:text-[#8e8e93] rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0a84ff] disabled:opacity-50"
+            className="flex-1 min-w-0 bg-[#3a3a3c] text-white placeholder:text-[#8e8e93] rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#0a84ff] disabled:opacity-50"
+          />
+          <ReplySpeechButton
+            text={input}
+            variant="phoneDark"
+            listenLabel="Hear"
+            className="shrink-0 border border-[#3a3a3c] rounded-full px-2 py-1.5"
           />
           <button
             type="submit"

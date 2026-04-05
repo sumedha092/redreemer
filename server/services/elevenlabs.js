@@ -91,3 +91,57 @@ export function getAllClipUrls() {
     url
   }))
 }
+
+/** ElevenLabs character limit per request (conservative for most plans). */
+export const MAX_TTS_CHARS = 2500
+
+/**
+ * Convert plain text to MP3 bytes via ElevenLabs REST API.
+ * Server-side only — never expose the API key to clients.
+ * Used by POST /api/tts for on-demand speech in the chat UI.
+ *
+ * @param {string} text
+ * @param {{ voiceId?: string, modelId?: string, stability?: number, similarityBoost?: number }} [options]
+ * @returns {Promise<Buffer>}
+ */
+export async function synthesizeSpeech(text, options = {}) {
+  const apiKey = process.env.ELEVENLABS_API_KEY
+  const voiceId = options.voiceId || process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'
+
+  if (!apiKey || apiKey === 'your_elevenlabs_api_key') {
+    throw new Error('ELEVENLABS_API_KEY is not configured on the server')
+  }
+
+  const trimmed = String(text ?? '').trim()
+  if (!trimmed) throw new Error('text is required')
+  if (trimmed.length > MAX_TTS_CHARS) {
+    throw new Error(`text must be at most ${MAX_TTS_CHARS} characters`)
+  }
+
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
+      },
+      body: JSON.stringify({
+        text: trimmed,
+        model_id: options.modelId || 'eleven_turbo_v2_5',
+        voice_settings: {
+          stability: options.stability ?? 0.5,
+          similarity_boost: options.similarityBoost ?? 0.75,
+        },
+      }),
+    }
+  )
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`ElevenLabs error ${response.status}: ${errText.slice(0, 300)}`)
+  }
+
+  return Buffer.from(await response.arrayBuffer())
+}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Users, MessageSquare, DollarSign, Clock } from 'lucide-react';
+import { Users, MessageSquare, DollarSign, Clock, ShieldAlert } from 'lucide-react';
 import { useImpact } from '@/hooks/useClients';
 
 function useCountUp(target: number, inView: boolean) {
@@ -36,24 +36,26 @@ export default function StatsBanner() {
 
   const countPeople = useCountUp(peopleHelped, inView);
   const countMessages = useCountUp(messagesSent, inView);
+  const countScams = useCountUp(23, inView);
 
   const stats = [
     { icon: Users, count: countPeople, label: 'People Helped', display: null },
     { icon: MessageSquare, count: countMessages, label: 'Messages Sent', display: null },
+    { icon: ShieldAlert, count: countScams, label: 'Scam Alerts Blocked', display: null },
     { icon: DollarSign, count: 0, label: 'Cost to Users', display: '$0' },
     { icon: Clock, count: 0, label: 'AI Availability', display: '24/7' },
   ];
 
   return (
-    <section ref={ref} className="w-full border-y border-border bg-foreground/[0.02] py-8">
-      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8">
+    <section ref={ref} className="w-full py-10" style={{ background: '#0f172a' }}>
+      <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-8">
         {stats.map((s, i) => (
           <div key={i} className="text-center">
-            <s.icon className="w-5 h-5 text-primary mx-auto mb-2" />
-            <div className="font-mono text-4xl md:text-5xl text-primary font-medium">
+            <s.icon className="w-5 h-5 mx-auto mb-2" style={{ color: '#f5e000' }} />
+            <div className="font-mono text-4xl md:text-5xl font-medium" style={{ color: '#f5e000' }}>
               {s.display ?? s.count.toLocaleString()}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
+            <div className="text-sm text-gray-400 mt-1">{s.label}</div>
           </div>
         ))}
       </div>

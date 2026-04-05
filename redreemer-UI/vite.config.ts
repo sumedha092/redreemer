@@ -13,7 +13,9 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       '/api': 'http://localhost:3001',
-      '/sms': 'http://localhost:3001'
+      '/sms': 'http://localhost:3001',
+      '/audio': 'http://localhost:3001',
+      '/clips': 'http://localhost:3001',
     }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),

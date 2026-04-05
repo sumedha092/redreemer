@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Sun, Moon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useTheme } from '@/context/ThemeContext';
 import Logo from '@/components/Logo';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -16,7 +14,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'backdrop-blur-xl border-b border-border bg-background/80' : ''}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'backdrop-blur-xl border-b border-border bg-white/90' : ''}`}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Logo size="md" />
@@ -27,12 +25,8 @@ export default function Navbar() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggleTheme}
-            className="w-9 h-9 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          <button onClick={() => navigate('/login')} className="text-sm text-gray-600 hover:text-gray-900 transition-colors font-medium">
+            Sign in
           </button>
           <button
             onClick={() => navigate('/signup')}

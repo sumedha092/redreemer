@@ -13,18 +13,37 @@ import Footer from '@/components/landing/Footer';
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-background text-foreground scroll-smooth">
+    <div className="min-h-screen bg-white text-foreground scroll-smooth">
       <Navbar />
+      {/* Hero — white bg, aurora glows */}
       <HeroSection />
+      {/* Stats — dark navy band */}
       <StatsBanner />
-      <HowItWorks />
+      {/* How It Works — soft gray */}
+      <div className="bg-gray-50">
+        <HowItWorks />
+      </div>
+      {/* Demo — white */}
       <DemoPlayer />
+      {/* Who We Serve — full-bleed images, no bg needed */}
       <WhoWeServe />
-      <JourneySection />
-      <FinancialTools />
-      <Testimonials />
+      {/* Journey — deep indigo/navy bg */}
+      <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' }}>
+        <JourneySection />
+      </div>
+      {/* Financial Tools — soft warm gray */}
+      <div className="bg-gray-50">
+        <FinancialTools />
+      </div>
+      {/* Testimonials — deep emerald-tinted dark */}
+      <div style={{ background: 'linear-gradient(135deg, #064e3b 0%, #065f46 100%)' }}>
+        <Testimonials />
+      </div>
+      {/* For Caseworkers — white */}
       <ForCaseworkers />
+      {/* Mission — full-bleed photo overlay */}
       <MissionSection />
+      {/* Footer — dark */}
       <Footer />
     </div>
   );

@@ -66,15 +66,15 @@ html.dark, [data-theme="dark"] {
 
   .text-gradient-brand {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(90deg, #d4a000, #f5d000);
+    background-image: linear-gradient(90deg, #c9a800, #f5e000);
   }
   .text-gradient-amber {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #e6b800, #f5d000);
+    background-image: linear-gradient(135deg, #c9a800, #f5e000);
   }
   .text-gradient-lemon {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #c9a800, #f0d000, #e8c800);
+    background-image: linear-gradient(135deg, #c9a800, #f5e000, #ffe44d);
   }
   .text-gradient-guardian {
     @apply bg-clip-text text-transparent;
@@ -104,6 +104,8 @@ html.dark, [data-theme="dark"] {
   .guardian-card:hover { box-shadow: var(--indigo-glow); }
   .flourish-card:hover { box-shadow: var(--emerald-glow); }
   .glow-lemon { box-shadow: var(--lemon-glow); }
+  .glow-amber { box-shadow: 0 0 24px rgba(245, 224, 0, 0.5); }
+  .hover\:glow-amber:hover { box-shadow: 0 0 24px rgba(245, 224, 0, 0.5); }
 
   .dot-grid {
     background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 1px);

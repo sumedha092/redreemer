@@ -1,7 +1,8 @@
 import express from 'express'
 import { checkJwt, getAuth0User } from '../middleware/auth.js'
 import { sendSMS } from '../services/textbelt.js'
-import { getAllClipUrls } from '../services/elevenlabs.js'
+import { getAllClipUrls, synthesizeSpeech } from '../services/elevenlabs.js'
+import rateLimit from 'express-rate-limit'
 import {
   getCaseworkerByAuth0Id,
   getCaseworkerClients,
@@ -12,11 +13,45 @@ import {
   getConversationHistory,
   getStepLogs,
   getCrisisAlerts,
-  resolveCrisisAlert
+  resolveCrisisAlert,
+  getSilentClients,
+  computeRiskScore,
+  getRiskLabel
 } from '../services/supabase.js'
 import { supabase } from '../services/supabase.js'
 
 const router = express.Router()
+
+/** On-demand TTS — rate limited; ElevenLabs key stays server-side only. */
+const ttsLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many speech requests. Try again in a minute.' },
+})
+
+/**
+ * POST /api/tts
+ * Body: { text: string } — returns audio/mpeg via ElevenLabs.
+ * No auth required — rate limited to 20/min.
+ */
+router.post('/tts', ttsLimiter, async (req, res) => {
+  try {
+    const { text } = req.body || {}
+    const audio = await synthesizeSpeech(text)
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Cache-Control', 'no-store')
+    res.send(audio)
+  } catch (err) {
+    console.error('POST /api/tts error:', err.message)
+    const msg = err.message || 'TTS failed'
+    if (msg.includes('required') || msg.includes('at most') || msg.includes('not configured')) {
+      return res.status(400).json({ error: msg })
+    }
+    res.status(502).json({ error: msg })
+  }
+})
 
 // ── FEATURE 6: Impact metrics (no auth required) ─────────────────────────────
 let impactCache = null
@@ -135,6 +170,12 @@ router.post('/ai/insights', async (req, res) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const prompts = {
+      analytics: `You are an AI assistant helping a social worker understand their caseload.
+Analyze this data and respond in JSON with exactly these keys: { "headline": "one sentence summary of the caseload health", "topPriority": "the single most urgent action the caseworker should take today", "atRiskInsight": "specific observation about at-risk clients", "progressHighlight": "something positive happening in the caseload", "recommendation": "one strategic recommendation to improve outcomes" }
+
+Data: ${JSON.stringify(data)}
+Plain text only — no markdown.`,
+
       emergency: `You are a compassionate financial advisor helping a low-income person build an emergency fund.
 Analyze this data and respond in JSON with exactly these keys: { "riskLevel": "low"|"medium"|"high", "prediction": "one sentence predicting when they'll need their emergency fund", "recommendation": "one specific actionable step", "insight": "one encouraging observation about their progress", "monthsUntilRisk": number }
 
@@ -183,6 +224,30 @@ Plain text only — no markdown.`
     res.json({ insights: parsed })
   } catch (err) {
     console.error('POST /api/ai/insights error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * POST /api/sms/broadcast
+ * Send a proactive message to all clients (daily tip, alert, etc.)
+ * No auth required for demo.
+ */
+router.post('/sms/broadcast', async (req, res) => {
+  try {
+    const { message, phones } = req.body
+    if (!message || !phones?.length) return res.status(400).json({ error: 'message and phones required' })
+    const results = []
+    for (const phone of phones) {
+      try {
+        await sendSMS(phone, message)
+        results.push({ phone, success: true })
+      } catch (err) {
+        results.push({ phone, success: false, error: err.message })
+      }
+    }
+    res.json({ sent: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length })
+  } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
@@ -713,6 +778,56 @@ router.post('/crisis-alerts/:id/resolve', async (req, res) => {
     res.json(alert)
   } catch (err) {
     console.error('POST /crisis-alerts/:id/resolve error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/clients/silent
+ * Returns clients who haven't texted in 7+ days, ordered by last_active ascending.
+ * JWT protected.
+ */
+router.get('/clients/silent', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+    const days = parseInt(req.query.days) || 7
+    const clients = await getSilentClients(days)
+    res.json(clients)
+  } catch (err) {
+    console.error('GET /clients/silent error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
+/**
+ * GET /api/clients/:id/risk-score
+ * Returns engagement risk score (0-10) for a client.
+ * JWT protected.
+ */
+router.get('/clients/:id/risk-score', async (req, res) => {
+  try {
+    const authUser = getAuth0User(req)
+    if (!authUser) return res.status(401).json({ error: 'Unauthorized' })
+
+    const client = await getUserById(req.params.id)
+    if (!client) return res.status(404).json({ error: 'Client not found' })
+
+    const score = computeRiskScore(client)
+    const { label, color } = getRiskLabel(score)
+    const daysSilent = client.last_active
+      ? Math.floor((Date.now() - new Date(client.last_active).getTime()) / (1000 * 60 * 60 * 24))
+      : 999
+
+    let reason = ''
+    if (daysSilent >= 14) reason = `${daysSilent} days silent`
+    else if (daysSilent >= 7) reason = `${daysSilent} days silent`
+    if ((client.current_step || 1) <= 2) reason += (reason ? ' + ' : '') + `on Step ${client.current_step || 1} (early dropout risk)`
+    if ((client.predatory_warnings || 0) > 0) reason += (reason ? ' + ' : '') + 'targeted by predatory lenders'
+
+    res.json({ score, label, color, reason: reason || 'Engaged and progressing' })
+  } catch (err) {
+    console.error('GET /clients/:id/risk-score error:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
 })

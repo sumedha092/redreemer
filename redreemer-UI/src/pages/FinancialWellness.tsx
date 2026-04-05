@@ -2,11 +2,10 @@ import { useState, useMemo, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Wallet, Shield, TrendingDown, Target, BookOpen, Activity, ShieldCheck,
-  BarChart2, ChevronRight, Sun, Moon, ExternalLink, AlertTriangle,
+  BarChart2, ChevronRight, ExternalLink, AlertTriangle,
   Landmark, TrendingUp, Apple, FileText, Home, Car, Heart, CheckCircle, X,
   Database
 } from 'lucide-react';
-import { useTheme } from '@/context/ThemeContext';
 import { useToast } from '@/components/Toast';
 import Logo from '@/components/Logo';
 import DataInsights from '@/components/DataInsights';
@@ -51,7 +50,6 @@ export function WellnessContent({ tool }: { tool: string }) {
 
 export default function FinancialWellness() {
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabId>('budget');
 
   return (
@@ -74,9 +72,6 @@ export default function FinancialWellness() {
             </h1>
             <p className="text-muted-foreground text-sm mt-1">Empowering financial confidence at every stage of the journey</p>
           </div>
-          <button onClick={toggleTheme} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors">
-            <Sun size={16} />
-          </button>
         </div>
       </div>
 
@@ -939,6 +934,7 @@ function RiskScore() {
           <AIInsightPanel
             tool="risk"
             data={{ score: totalScore, answers: Object.fromEntries(Object.entries(answers).map(([id, idx]) => [id, RISK_QUESTIONS.find(q => q.id === id)?.options[idx]?.label || ''])) }}
+            onAlert={(msg, lvl) => addAlert(msg, lvl, 'risk')}
           />
         </>
       )}

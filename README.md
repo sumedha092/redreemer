@@ -2,18 +2,62 @@
 
 > Redeem what was lost. Redream what's possible.
 
-SMS-based financial empowerment platform for homeless individuals and people recently released from prison. One phone number. Text anything. Gemini responds with real local resources, tracks your 8-step progress toward housing stability, and proactively reaches out when it matters.
+Free SMS-based financial empowerment platform for homeless individuals and people recently released from prison. One phone number. Text anything. Gemini AI responds with real local resources, tracks 8-step progress toward housing stability, and proactively reaches out when it matters.
+
+**No app. No bank account. No address required. Just a text.**
 
 ---
 
 ## What It Does
 
-- **SMS layer** — Text the Redreemer number in plain English. Gemini routes you to the right experience (homeless or reentry), answers with real local resources via Google Places API, and tracks your progress automatically.
-- **8-step ladder** — Two ladders (homeless + reentry), each guiding users from first contact to financial stability.
-- **Proactive outreach** — Weather alerts below 35°F, appointment reminders, 5-day check-ins.
-- **ElevenLabs voice milestones** — Warm human voice messages when users complete major steps.
-- **Caseworker dashboard** — React app with Auth0 login, client management, financial health scores, analytics, and demo mode.
-- **Financial Wellness suite** — Budget tracker, net worth calculator, emergency fund planner, debt payoff calculator, insurance education, savings goals, risk assessment, financial literacy modules.
+### SMS Features (text the number from any phone)
+- **Gemini 2.5 Flash AI** — routes to homeless or reentry path, responds in any language automatically
+- **Predatory lender detection** — intercepts payday loan / title loan keywords before Gemini, fires bilingual warning with safer alternatives
+- **Step-aware resources** — injects real Phoenix addresses and phone numbers for the user's current step into every AI response
+- **Bank account guide** — conversational flow: ID check → ChexSystems check → specific Bank On recommendation
+- **ID recovery guide** — walks through Birth Certificate → SSN Card → State ID in order
+- **Money personality quiz** — 4-question SMS quiz, classifies into Survivor/Planner/Builder, tailors all future AI tone
+- **Fair-chance employer finder** — 6 real Phoenix employers with phones, fires at Step 4+
+- **Benefits navigator** — 4-question eligibility flow, returns personalized SNAP/AHCCCS/SSI/LIHEAP list
+- **Credit explainer** — plain English + situation-specific first step (Self Financial, annualcreditreport.com, Discover It Secured)
+- **Expungement checker** — Arizona eligibility rules, 3-question flow, stores eligibility year for future reminder
+- **Literacy-aware simplified mode** — auto-detects short messages, switches to 6th-grade vocabulary
+- **Contextual check-ins** — Gemini generates personalized check-in referencing what user was working on
+- **Voice milestone clips** — ElevenLabs MMS auto-sent on step advance, text fallback if MMS fails
+- **Weekly progress SMS** — Sunday 9am, skips users who texted in last 24h
+- **Weekly wins SMS** — celebrates what user actually did that week, never generic
+- **Spanish support** — full bilingual: all flows, cron jobs, predatory warnings, benefits navigator
+- **Crisis detection** — 988 Lifeline, Crisis Text Line, National Homeless Hotline
+- **Keyword shortcuts** — FOOD, SHELTER, BANK, ID, BENEFITS, JOB, DEBT, HELP
+
+### Caseworker Dashboard
+- Client management with step advancement and notes
+- Silent client alerts — amber banner for 7d, red for 14d, "Lost contact" for 21d
+- Engagement risk score — green/amber/red dot per client with hover tooltip
+- "Reach Out" button with pre-filled suggested message
+- AI caseload analysis (Gemini)
+- Analytics with Recharts charts (step funnel, type breakdown, health scores)
+- Scam attempts blocked counter per client
+
+### Client Dashboard (homeless/reentry users)
+- "What do you need right now?" quick actions (Shelter, Food, Money, Job, Benefits)
+- Emotional progress language ("You've already done X. Your next step is Y.")
+- Crisis banner always visible → CrisisModal with 988, Crisis Text Line, Homeless Hotline
+- Scam warning banner (dismissible)
+- Financial tools behind progressive disclosure toggle
+- Language selector (7 languages)
+- Full Financial Wellness suite inline
+
+### Financial Wellness Suite
+- Budget Tracker with AI insights
+- Emergency Fund Planner with milestone tracking + AI risk prediction
+- Debt Payoff Calculator (snowball/avalanche) + AI recommendation
+- Net Worth Calculator + AI trajectory
+- Savings Goals + AI coaching
+- Risk Score Assessment + AI summary
+- Financial Literacy (6 modules)
+- Insurance Education
+- Community Data — CFPB complaints, FDIC unbanked rates, ACS income by zip, banking desert map
 
 ---
 
@@ -21,75 +65,61 @@ SMS-based financial empowerment platform for homeless individuals and people rec
 
 | Tool | Role |
 |------|------|
-| Node.js + Express | Backend |
-| React + Tailwind CSS | Caseworker dashboard |
-| Supabase | Database + RLS |
-| Twilio | SMS in/out + voice delivery |
-| Gemini API (gemini-1.5-flash) | All AI — routing, responses, weekly summaries |
-| ElevenLabs | Milestone voice messages |
+| Node.js + Express (ESM) | Backend |
+| React 18 + TypeScript + Vite | Primary frontend (redreemer-UI) |
+| Tailwind CSS + shadcn/ui | UI components |
+| Supabase (PostgreSQL + RLS) | Database |
+| Twilio | SMS in/out + MMS voice delivery |
+| Gemini 2.5 Flash | All AI — routing, responses, check-ins, wins, quiz |
+| ElevenLabs | Milestone voice messages (6 clips) |
 | Auth0 | Caseworker auth + role-based access |
-| Google Places API | Real nearby resources |
-| Recharts | Analytics charts |
-| Vercel | Deployment |
+| TanStack Query | Server state management |
+| Recharts | Data visualization |
+| Framer Motion | Animations |
 
 ---
 
-## Setup
+## Quick Start
 
-### 1. Clone
-
-```bash
-git clone https://github.com/YOUR_USERNAME/redreemer.git
-cd redreemer
+### 1. Database
+Run in Supabase SQL editor in order:
+```
+supabase/schema.sql
+supabase/migrations/002_add_new_columns.sql
+supabase/seed.sql   (optional demo data)
 ```
 
 ### 2. Server
-
 ```bash
-cd server
+cd redreemer/server
 npm install
 cp .env.example .env   # fill in your keys
 npm run dev
 ```
 
-### 3. Client
-
+### 3. Frontend
 ```bash
-cd client
+cd redreemer/redreemer-UI
 npm install
-cp .env.example .env   # fill in your keys
+cp .env.example .env   # fill in Auth0 + API URL
 npm run dev
 ```
 
-### 4. Database
-
-Run `supabase/schema.sql` in your Supabase SQL editor, then optionally `supabase/seed.sql` for demo data.
-
-Add the `financial_health_score` column if upgrading:
-```sql
-ALTER TABLE users ADD COLUMN IF NOT EXISTS financial_health_score integer default 0;
-```
-
-### 5. Twilio Webhook
-
+### 4. SMS webhook (local dev)
 ```bash
 ngrok http 3001
+# Set Twilio webhook to: https://<ngrok-url>/sms/incoming (POST)
 ```
-
-Set your Twilio number webhook to:
-```
-https://your-ngrok-url.ngrok.io/sms/incoming
-```
-Method: HTTP POST
 
 ---
 
 ## Environment Variables
 
 ### server/.env
-
 ```
 PORT=3001
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_PHONE_NUMBER=
@@ -97,38 +127,42 @@ GEMINI_API_KEY=
 ELEVENLABS_API_KEY=
 ELEVENLABS_VOICE_ID=
 AUTH0_DOMAIN=
-AUTH0_CLIENT_ID=
-AUTH0_CLIENT_SECRET=
 AUTH0_AUDIENCE=
-SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-WEATHER_API_KEY=
-GOOGLE_PLACES_API_KEY=
 ```
 
-### client/.env
-
+### redreemer-UI/.env
 ```
-VITE_MOCK_MODE=false
 VITE_AUTH0_DOMAIN=
 VITE_AUTH0_CLIENT_ID=
 VITE_AUTH0_AUDIENCE=
 VITE_API_URL=http://localhost:3001
+VITE_MOCK_MODE=true   # set false to use real backend
 ```
 
 ---
 
 ## Demo
 
-Set `VITE_MOCK_MODE=true` in `client/.env` to run the dashboard with mock data (Marcus, James, Darnell) without any backend.
+Text **+1 (415) 523-8886** from any phone. Try:
+- "I'm homeless and I have nowhere to sleep"
+- "I need a payday loan" (scam alert fires)
+- "I need a job but I have a record" (fair-chance employers)
+- "what benefits do I qualify for" (eligibility navigator)
+- "how do I expunge my record" (expungement checker)
+- "hola necesito ayuda" (Spanish mode activates)
 
-For a live demo, click "Run Demo" on the Analytics page to create Alex — a pre-scripted 3-week conversation showing survival → stability → empowerment.
+Or visit the landing page and click "Live Demo" in the demo player.
 
 ---
 
-## Hackathon Tracks
+## Hackathon Judging Criteria
 
-- **State Farm Financial Wellness** — Financial literacy through every SMS interaction, 8-step ladder, accessible to most excluded populations
-- **Google Agentic AI** — Gemini reads context, reasons about user situation, routes, selects resources, tracks progress, proactively reaches out
-- **Best Use of ElevenLabs** — Milestone voice messages at key steps
-- **Best Use of Auth0** — Two roles (caseworker + admin), RLS enforced at database level
+**Innovation** — First platform to combine SMS-first financial empowerment with predatory lender detection, expungement eligibility checking, money personality profiling, and step-aware local resources — all in one text message.
+
+**Technical Execution** — Full-stack: Node.js/Express backend, React/TypeScript frontend, Supabase database, Twilio SMS, Gemini 2.5 Flash AI, ElevenLabs voice, 20 distinct features across 3 phases.
+
+**Accessibility & Inclusivity** — Works on any phone including flip phones. No app, no email, no bank account required. Multilingual (auto-detects any language). Literacy-aware simplified mode. Crisis detection in every message.
+
+**Real-World Impact** — All resources are real Phoenix addresses with real phone numbers. FDIC, CFPB, and Census Bureau data embedded. Could be deployed today — just point a Twilio number at the webhook.
+
+**Clarity** — 60-second auto-play demo on the landing page. 6 scenes covering every major feature. "Live Demo" button for judges who want to text the real AI.

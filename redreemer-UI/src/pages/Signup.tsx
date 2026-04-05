@@ -52,7 +52,16 @@ export default function Signup() {
         <div className="absolute inset-0 dot-grid opacity-20" />
 
         <div className="relative z-10">
-          <Logo size="md" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width={32} height={32} viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="rgba(0,0,0,0.15)" />
+              <text x="14" y="22" textAnchor="middle" fill="#111827" fontSize="18" fontWeight="800" fontFamily="Space Grotesk, sans-serif">R</text>
+              <path d="M22 8 L26 4 M26 4 L26 8 M26 4 L22 4" stroke="#111827" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 800, fontSize: '20px', color: '#111827' }}>
+              Redreemer
+            </span>
+          </div>
         </div>
 
         <div className="relative z-10">
@@ -87,8 +96,9 @@ export default function Signup() {
             <Logo size="md" />
           </div>
 
-          <h2 className="font-heading font-bold text-2xl text-gray-900 mb-1">How will you use Redreemer?</h2>
-          <p className="text-gray-500 text-sm mb-8">Choose the option that best describes you.</p>
+          <h2 className="font-heading font-bold text-2xl text-gray-900 mb-1">You're in the right place.</h2>
+          <p className="text-gray-500 text-sm mb-2">No judgment. No cost. Just real help.</p>
+          <p className="text-gray-400 text-xs mb-8">Tell us a little about yourself so we can show you the right tools.</p>
 
           <div className="space-y-3 mb-8">
             {USER_TYPES.map(({ type, icon: Icon, title, desc }) => (
@@ -124,7 +134,10 @@ export default function Signup() {
             Continue <ArrowRight size={18} />
           </button>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-xs text-gray-400 mt-4 leading-relaxed">
+            Everything here is free and confidential. We never share your information.
+          </p>
+          <p className="text-center text-sm text-gray-500 mt-4">
             Already have an account?{' '}
             <button onClick={() => navigate('/login')} className="text-gray-700 hover:underline font-medium">
               Sign in

@@ -165,6 +165,109 @@ export default function DataInsights() {
         <SourceCredit text="Source: U.S. Census Bureau American Community Survey 5-Year Estimates 2022" />
       </div>
 
+      {/* Banking Desert Map — Feature 17 */}
+      <BankingDesertMap />
+
+    </div>
+  );
+}
+
+// ── Banking Desert Map (Feature 17) ──────────────────────────────────────────
+
+import bankingDeserts from '@/data/bankingDeserts.json';
+
+function BankingDesertMap() {
+  // Compute branch density by zip code from the FDIC data
+  const branchByZip: Record<string, number> = {};
+  (bankingDeserts as any[]).forEach((b: any) => {
+    const zip = b.zipcode || b.ZIPCODE || '';
+    if (zip) branchByZip[zip] = (branchByZip[zip] || 0) + 1;
+  });
+
+  // Get unique zips sorted by branch count
+  const zipEntries = Object.entries(branchByZip)
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, 30); // show 30 lowest-density zips
+
+  const desertCount = zipEntries.filter(([, count]) => count === 0).length;
+  const totalBranches = (bankingDeserts as any[]).length;
+
+  function getColor(count: number) {
+    if (count === 0) return '#E24B4A';
+    if (count <= 2) return '#EF9F27';
+    if (count <= 5) return '#97C459';
+    return '#639922';
+  }
+
+  function getLabel(count: number) {
+    if (count === 0) return 'Banking desert';
+    if (count <= 2) return '1–2 branches';
+    if (count <= 5) return '3–5 branches';
+    return '6+ branches';
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <h3 className="font-heading font-bold text-gray-900 text-lg mb-1">
+        Banking Access by Zip Code — Arizona
+      </h3>
+      <p className="text-sm text-gray-500 mb-5">
+        Branch density from FDIC data. Red = banking desert (0 branches). These are the communities most dependent on predatory lenders.
+      </p>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 mb-5">
+        {[
+          { color: '#E24B4A', label: 'Banking desert (0 branches)' },
+          { color: '#EF9F27', label: '1–2 branches' },
+          { color: '#97C459', label: '3–5 branches' },
+          { color: '#639922', label: '6+ branches' },
+        ].map(l => (
+          <div key={l.label} className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: l.color }} />
+            <span className="text-xs text-gray-600">{l.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Visual bar chart of zip codes by branch count */}
+      <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1.5 mb-5">
+        {zipEntries.map(([zip, count]) => (
+          <div key={zip} className="group relative">
+            <div className="w-full aspect-square rounded-lg transition-all duration-300 hover:scale-110 cursor-default"
+              style={{ backgroundColor: getColor(count) }} />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-28 bg-gray-900 text-white text-[10px] rounded-lg px-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-center">
+              <p className="font-mono font-bold">{zip}</p>
+              <p>{count === 0 ? 'No branches' : `${count} branch${count > 1 ? 'es' : ''}`}</p>
+              <p className="text-gray-400">{getLabel(count)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div className="text-center p-3 bg-red-50 rounded-xl border border-red-100">
+          <p className="font-mono font-bold text-2xl text-red-600">{desertCount}</p>
+          <p className="text-xs text-gray-600 mt-0.5">Banking deserts</p>
+        </div>
+        <div className="text-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+          <p className="font-mono font-bold text-2xl text-gray-900">{totalBranches.toLocaleString()}</p>
+          <p className="text-xs text-gray-600 mt-0.5">Total AZ branches</p>
+        </div>
+        <div className="text-center p-3 bg-yellow-50 rounded-xl border border-yellow-100">
+          <p className="font-mono font-bold text-2xl text-yellow-700">19%</p>
+          <p className="text-xs text-gray-600 mt-0.5">Unbanked/underbanked</p>
+        </div>
+      </div>
+
+      <div className="p-3 rounded-xl border border-yellow-200 bg-yellow-50">
+        <p className="text-xs text-gray-700 leading-relaxed">
+          <span className="font-semibold">Redreemer helps users in these zip codes</span> open Bank On certified accounts — no branch visit required for the first step. Just a phone and a text message.
+        </p>
+      </div>
+
+      <SourceCredit text="Source: FDIC BankFind Suite 2023 — Arizona branch data" />
     </div>
   );
 }

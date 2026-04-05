@@ -261,3 +261,114 @@ export async function updatePreferredLanguage(userId, lang) {
     .eq('id', userId)
   if (error) throw error
 }
+
+// ── user_meta JSONB helpers ───────────────────────────────────────────────────
+
+/**
+ * Merge new fields into user_meta JSONB without overwriting existing keys.
+ */
+export async function updateUserMeta(userId, metaUpdate) {
+  // Fetch current meta first
+  const { data: user } = await supabase
+    .from('users')
+    .select('user_meta')
+    .eq('id', userId)
+    .single()
+
+  const current = user?.user_meta || {}
+  const merged = { ...current, ...metaUpdate }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ user_meta: merged })
+    .eq('id', userId)
+
+  if (error) throw error
+  return merged
+}
+
+/**
+ * Get user_meta for a user.
+ */
+export async function getUserMeta(userId) {
+  const { data } = await supabase
+    .from('users')
+    .select('user_meta')
+    .eq('id', userId)
+    .single()
+  return data?.user_meta || {}
+}
+
+/**
+ * Increment predatory_warnings counter.
+ */
+export async function incrementPredatoryWarnings(userId) {
+  const { data: user } = await supabase
+    .from('users')
+    .select('predatory_warnings')
+    .eq('id', userId)
+    .single()
+  const current = user?.predatory_warnings || 0
+  await supabase
+    .from('users')
+    .update({ predatory_warnings: current + 1 })
+    .eq('id', userId)
+}
+
+/**
+ * Get silent clients — last_text_at older than given days.
+ */
+export async function getSilentClients(days = 7) {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .lt('last_active', cutoff)
+    .not('phone_number', 'is', null)
+    .not('user_type', 'is', null)
+    .neq('current_step', 8)
+    .order('last_active', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+/**
+ * Compute engagement risk score for a client (0-10).
+ * Higher = more at risk of dropping out.
+ */
+export function computeRiskScore(user) {
+  let score = 0
+  const now = Date.now()
+  const lastActive = user.last_active ? new Date(user.last_active).getTime() : 0
+  const daysSilent = (now - lastActive) / (1000 * 60 * 60 * 24)
+
+  if (daysSilent >= 7) score += 3
+  if (daysSilent >= 14) score += 2  // cumulative: +5
+  if (daysSilent <= 2) score -= 1   // active recently
+
+  // Stuck on same step
+  const stepUpdatedAt = user.step_updated_at ? new Date(user.step_updated_at).getTime() : 0
+  const daysOnStep = (now - stepUpdatedAt) / (1000 * 60 * 60 * 24)
+  if (daysOnStep > 10) score += 2
+
+  // Early steps are highest dropout risk
+  const step = user.current_step || 1
+  if (step <= 2) score += 2
+
+  // Predatory warnings — being targeted
+  if ((user.predatory_warnings || 0) > 0) score += 1
+
+  // Advanced a step recently
+  if (daysOnStep < 7 && step > 1) score -= 2
+
+  return Math.max(0, Math.min(10, score))
+}
+
+/**
+ * Get risk label and color for a score.
+ */
+export function getRiskLabel(score) {
+  if (score <= 3) return { label: 'Low risk', color: 'green' }
+  if (score <= 6) return { label: 'Medium risk', color: 'amber' }
+  return { label: 'High risk', color: 'red' }
+}

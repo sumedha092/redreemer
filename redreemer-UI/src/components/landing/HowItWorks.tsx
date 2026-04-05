@@ -3,21 +3,27 @@ import { MessageSquare, MapPin, TrendingUp } from 'lucide-react';
 const cards = [
   {
     img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
-    Icon: MessageSquare, iconBg: 'bg-primary/15 text-primary',
+    Icon: MessageSquare,
+    iconBg: 'bg-yellow-100', iconColor: 'text-yellow-700',
     step: '01', title: 'Text Anything',
     body: 'Text our number from any phone. Our AI meets you where you are, whether you need shelter tonight or help understanding your paycheck.',
+    accent: '#f5e000',
   },
   {
     img: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=600',
-    Icon: MapPin, iconBg: 'bg-secondary/15 text-secondary',
+    Icon: MapPin,
+    iconBg: 'bg-indigo-100', iconColor: 'text-indigo-600',
     step: '02', title: 'Get Real Help',
     body: 'We find real shelters, food banks, and reentry programs near you with actual addresses and phone numbers. Not generic advice. Real places.',
+    accent: '#6366f1',
   },
   {
     img: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600',
-    Icon: TrendingUp, iconBg: 'bg-accent/15 text-accent',
+    Icon: TrendingUp,
+    iconBg: 'bg-emerald-100', iconColor: 'text-emerald-600',
     step: '03', title: 'Build Your Future',
     body: 'As you stabilize, we walk you through budgeting, avoiding predatory lenders, building credit, and saving for your first apartment.',
+    accent: '#10b981',
   },
 ];
 
@@ -31,13 +37,13 @@ export default function HowItWorks() {
       </div>
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-6">
         {cards.map((c) => (
-          <div key={c.step} className="glass-card group">
+          <div key={c.step} className="glass-card group border-t-4" style={{ borderTopColor: c.accent }}>
             <div className="rounded-2xl overflow-hidden h-48 mb-5 relative">
               <img src={c.img} alt={c.title} className="w-full h-full object-cover" loading="lazy" />
               <div className="absolute inset-0 bg-background/40" />
             </div>
             <div className={`w-12 h-12 rounded-full ${c.iconBg} flex items-center justify-center mb-4`}>
-              <c.Icon size={20} />
+              <c.Icon size={20} className={c.iconColor} />
             </div>
             <span className="font-mono text-xs text-muted-foreground">{c.step}</span>
             <h3 className="font-heading font-bold text-xl text-foreground mt-1 mb-2">{c.title}</h3>

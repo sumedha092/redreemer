@@ -22,23 +22,23 @@ export default function Testimonials() {
   return (
     <section className="py-28 px-6">
       <div className="max-w-7xl mx-auto text-center mb-16">
-        <p className="text-primary text-xs font-semibold tracking-[0.15em] uppercase mb-3">Real Stories</p>
-        <h2 className="font-heading font-bold text-4xl md:text-5xl text-foreground">Real change.</h2>
+        <p className="text-xs font-semibold tracking-[0.15em] uppercase mb-3" style={{ color: '#6ee7b7' }}>Real Stories</p>
+        <h2 className="font-heading font-bold text-4xl md:text-5xl text-white">Real change.</h2>
       </div>
       <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-6">
         {testimonials.map((t) => (
-          <div key={t.name} className="glass-card">
+          <div key={t.name} className="rounded-2xl p-6 border border-white/10" style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-12 ${t.color} rounded-full flex items-center justify-center font-heading font-bold text-foreground text-lg`}>{t.initial}</div>
+              <div className={`w-12 h-12 ${t.color} rounded-full flex items-center justify-center font-heading font-bold text-white text-lg`}>{t.initial}</div>
               <div>
-                <div className="font-heading font-bold text-foreground">{t.name}</div>
-                <div className="text-xs text-muted-foreground">{t.location}</div>
+                <div className="font-heading font-bold text-white">{t.name}</div>
+                <div className="text-xs text-emerald-300/70">{t.location}</div>
               </div>
             </div>
-            <div className="glass inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs text-accent mb-4">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs mb-4 border border-emerald-400/30" style={{ background: 'rgba(110,231,183,0.1)', color: '#6ee7b7' }}>
               <CheckCircle className="w-3 h-3" /> {t.badge}
             </div>
-            <p className="text-foreground/80 text-sm italic leading-relaxed">"{t.quote}"</p>
+            <p className="text-white/75 text-sm italic leading-relaxed">"{t.quote}"</p>
           </div>
         ))}
       </div>
