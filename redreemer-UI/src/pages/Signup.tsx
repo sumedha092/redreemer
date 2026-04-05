@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth, UserType } from '@/context/AuthContext';
 import { useAuth0 } from '@auth0/auth0-react';
 import Logo from '@/components/Logo';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import LanguageMenu from '@/components/LanguageMenu';
 import { Users, Home, RotateCcw, ArrowRight, CheckCircle, Zap, Shield, Heart } from 'lucide-react';
 
@@ -96,7 +95,6 @@ export default function Signup() {
       {/* Right — form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-8 bg-background relative">
         <div className="absolute top-4 right-4 flex items-center gap-1 z-10">
-          <ThemeToggle />
           <LanguageMenu showCurrentLabel={false} align="right" />
         </div>
         <div className="w-full max-w-[460px]">

@@ -2,12 +2,12 @@
  * Single source for Gemini text model id across SMS, insights, jobs, and UI translate.
  *
  * Default avoids gemini-2.5-* preview ids that some keys/regions reject.
- * Override in server/.env: GEMINI_MODEL=gemini-1.5-flash
+ * Override in server/.env: GEMINI_MODEL=gemini-2.0-flash
  */
-export const GEMINI_TEXT_MODEL = (process.env.GEMINI_MODEL || 'gemini-2.0-flash').trim()
+export const GEMINI_TEXT_MODEL = (process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim()
 
 /** Ordered fallbacks when the primary model errors (quota, unknown model, region). */
-export const GEMINI_TEXT_MODEL_FALLBACKS = ['gemini-1.5-flash', 'gemini-2.5-flash']
+export const GEMINI_TEXT_MODEL_FALLBACKS = ['gemini-2.0-flash', 'gemini-2.5-flash']
 
 /** @param {import('@google/generative-ai').GoogleGenerativeAI} genAI */
 export async function generateContentWithFallback(genAI, prompt) {

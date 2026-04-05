@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuth } from '@/context/AuthContext';
 import Logo from '@/components/Logo';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import LanguageMenu from '@/components/LanguageMenu';
 import { ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +22,6 @@ export default function Login() {
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background p-6">
       <div className="absolute top-4 right-4 flex items-center gap-1">
-        <ThemeToggle />
         <LanguageMenu showCurrentLabel={false} align="right" />
       </div>
       <div className="w-full max-w-[400px]">

@@ -12,7 +12,11 @@ void i18n.use(initReactI18next).init({
   keySeparator: false,
   nsSeparator: false,
   interpolation: { escapeValue: false },
-  react: { useSuspense: false },
+  react: {
+    useSuspense: false,
+    bindI18n: 'languageChanged loaded',
+    bindI18nStore: 'added removed',
+  },
 })
 
 export default i18n

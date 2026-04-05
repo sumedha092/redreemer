@@ -1,7 +1,7 @@
 /**
  * Same-origin proxy: browser → /api/p/... → API_UPSTREAM_ORIGIN/...
  * Used when Vercel "Root Directory" is `redreemer-UI`.
- * Repository-root deploy uses /api/p/[...path].js — keep both files in sync.
+ * Repository-root deploy uses /api/p/[...path].js at repo root — keep both files in sync.
  *
  * Vercel: API_UPSTREAM_ORIGIN=https://YOUR.ngrok-free.dev (no trailing slash, no /api)
  * Build: VITE_API_URL=/api/p
@@ -9,8 +9,27 @@
 
 export const config = { runtime: 'edge' }
 
+function upstreamPathAndSearch(url) {
+  const u = new URL(url)
+  let pathname = u.pathname.replace(/^\/api\/p/, '') || '/'
+  if (pathname.startsWith('/api/')) {
+    pathname = pathname.slice(4)
+  }
+  const pathOnly = pathname.split('?')[0]
+  if (
+    pathOnly !== '/' &&
+    pathOnly !== '' &&
+    !pathOnly.startsWith('/api') &&
+    !pathOnly.startsWith('/sms') &&
+    !pathOnly.startsWith('/clips') &&
+    pathOnly !== '/health'
+  ) {
+    pathname = '/api' + (pathOnly.startsWith('/') ? pathOnly : '/' + pathOnly)
+  }
+  return pathname + (u.search || '')
+}
+
 export default async function handler(request) {
-  // CORS preflight — avoids 405 when the browser probes the proxy (e.g. some extension setups).
   if (request.method === 'OPTIONS') {
     const reqHdr = request.headers.get('Access-Control-Request-Headers') || ''
     return new Response(null, {
@@ -34,8 +53,7 @@ export default async function handler(request) {
     })
   }
 
-  const u = new URL(request.url)
-  const rest = (u.pathname.replace(/^\/api\/p/, '') || '/') + u.search
+  const rest = upstreamPathAndSearch(request.url)
   const target = `${upstream}${rest}`
 
   const headers = new Headers()

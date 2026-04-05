@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth0 } from '@auth0/auth0-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-
 /**
  * OAuth redirect lands here first. Auth0Provider exchanges the code for tokens,
  * then onRedirectCallback navigates to the app. This route must not redirect
@@ -22,9 +20,6 @@ export default function AuthCallback() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center gap-3 bg-background p-6">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
       <div className="w-10 h-10 rounded-xl overflow-hidden">
         <img src="/reverse-logo.png" alt="Redreemer" className="w-full h-full" />
       </div>

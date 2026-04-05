@@ -4,7 +4,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useAIAlerts } from '@/context/AIAlertContext';
 import Logo from '@/components/Logo';
 import LanguageMenu from '@/components/LanguageMenu';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Bell, Search, Settings, HelpCircle, LogOut, User,
   X, ChevronRight, Menu, Home, AlertTriangle
@@ -106,7 +105,7 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
               title={collapsed ? item.label : undefined}
               className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === item.id
-                  ? 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-400/40 font-semibold'
+                  ? 'bg-yellow-50 text-yellow-800 border border-yellow-300 font-semibold'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
@@ -222,7 +221,6 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
           </div>
 
           <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5 shrink-0">
-            <ThemeToggle />
             <LanguageMenu onOpen={() => { setNotifOpen(false); setProfileOpen(false); }} align="right" />
 
             {/* Notifications */}
@@ -238,7 +236,7 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
               {notifOpen && (
                 <div className="absolute right-0 top-10 w-[min(20rem,calc(100vw-1rem))] bg-popover border border-border rounded-xl shadow-xl z-50 animate-fade-in overflow-hidden">
                   <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <span className="font-semibold text-sm text-popover-foreground">{t('shell.notifications')} {unreadCount > 0 && <span className="ml-1 text-[10px] bg-red-500/15 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>}</span>
+                    <span className="font-semibold text-sm text-popover-foreground">{t('shell.notifications')} {unreadCount > 0 && <span className="ml-1 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">{unreadCount}</span>}</span>
                     <button type="button" onClick={() => setNotifOpen(false)}><X size={14} className="text-muted-foreground" /></button>
                   </div>
                   {/* AI risk alerts — shown first */}
@@ -249,7 +247,7 @@ export default function DashboardShell({ children, activeTab, onTabChange, navIt
                         <AlertTriangle size={12} className={a.level === 'danger' ? 'text-red-500' : 'text-yellow-600'} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-semibold mb-0.5 ${a.level === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-yellow-700 dark:text-yellow-500'}`}>
+                        <p className={`text-xs font-semibold mb-0.5 ${a.level === 'danger' ? 'text-red-600' : 'text-yellow-700'}`}>
                           {a.level === 'danger' ? t('shell.aiLineRisk', { tool: a.tool }) : t('shell.aiLineInsight', { tool: a.tool })}
                         </p>
                         <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{a.message}</p>

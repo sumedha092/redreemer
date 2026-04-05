@@ -10,6 +10,7 @@ import {
 import i18n, { enFlat } from '@/i18n'
 import { CATALOG_VERSION } from '@/i18n/catalogVersion'
 import { fetchTranslatedFlat } from '@/lib/translateUiBatch'
+import { useToast } from '@/components/Toast'
 
 type LocaleContextValue = {
   /** BCP-47 code */
@@ -28,52 +29,58 @@ function cacheKey(lng: string) {
 }
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast()
   const [language, setLanguage] = useState(() => localStorage.getItem(STORAGE_KEY) || 'en')
   const [switching, setSwitching] = useState(false)
   const [i18nReady, setI18nReady] = useState(false)
 
-  const switchLanguage = useCallback(async (lng: string) => {
-    const normalized = lng.trim()
-    localStorage.setItem(STORAGE_KEY, normalized)
-    document.documentElement.lang = normalized
+  const switchLanguage = useCallback(
+    async (lng: string) => {
+      const normalized = lng.trim()
+      localStorage.setItem(STORAGE_KEY, normalized)
+      document.documentElement.lang = normalized
 
-    const base = normalized.split('-')[0].toLowerCase()
-    if (base === 'en') {
-      await i18n.changeLanguage('en')
-      setLanguage('en')
-      return
-    }
+      const base = normalized.split('-')[0].toLowerCase()
+      if (base === 'en') {
+        await i18n.changeLanguage('en')
+        setLanguage('en')
+        return
+      }
 
-    const ck = cacheKey(normalized)
-    const raw = localStorage.getItem(ck)
-    if (raw) {
+      const ck = cacheKey(normalized)
+      const raw = localStorage.getItem(ck)
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw) as Record<string, string>
+          i18n.addResourceBundle(normalized, 'translation', parsed, true, true)
+          await i18n.changeLanguage(normalized)
+          setLanguage(normalized)
+          return
+        } catch {
+          localStorage.removeItem(ck)
+        }
+      }
+
+      setSwitching(true)
       try {
-        const parsed = JSON.parse(raw) as Record<string, string>
-        i18n.addResourceBundle(normalized, 'translation', parsed, true, true)
+        const merged = await fetchTranslatedFlat(normalized, enFlat)
+        localStorage.setItem(ck, JSON.stringify(merged))
+        i18n.addResourceBundle(normalized, 'translation', merged, true, true)
         await i18n.changeLanguage(normalized)
         setLanguage(normalized)
-        return
-      } catch {
-        localStorage.removeItem(ck)
+        toast(i18n.t('shell.translationLoaded'), 'success')
+      } catch (e) {
+        console.error('[Locale] Translation failed, falling back to English', e)
+        await i18n.changeLanguage('en')
+        setLanguage('en')
+        localStorage.setItem(STORAGE_KEY, 'en')
+        toast(i18n.t('shell.translationFailed'), 'error')
+      } finally {
+        setSwitching(false)
       }
-    }
-
-    setSwitching(true)
-    try {
-      const merged = await fetchTranslatedFlat(normalized, enFlat)
-      localStorage.setItem(ck, JSON.stringify(merged))
-      i18n.addResourceBundle(normalized, 'translation', merged, true, true)
-      await i18n.changeLanguage(normalized)
-      setLanguage(normalized)
-    } catch (e) {
-      console.error('[Locale] Translation failed, falling back to English', e)
-      await i18n.changeLanguage('en')
-      setLanguage('en')
-      localStorage.setItem(STORAGE_KEY, 'en')
-    } finally {
-      setSwitching(false)
-    }
-  }, [])
+    },
+    [toast]
+  )
 
   useEffect(() => {
     let cancelled = false

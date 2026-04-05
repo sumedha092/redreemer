@@ -26,15 +26,38 @@ const app = express()
 // Trust proxy headers from ngrok
 app.set('trust proxy', 1)
 
-// Middleware — reflect Origin (Vercel + localhost) and allow ngrok’s skip header on preflight
-app.use(
-  cors({
-    origin: true,
-    credentials: false,
-    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  })
-)
+const corsAllowList = new Set([
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:8080',
+  'https://redreemer.vercel.app',
+])
+
+function corsOrigin(origin, callback) {
+  if (!origin) return callback(null, true)
+  if (corsAllowList.has(origin)) return callback(null, true)
+  try {
+    const host = new URL(origin).hostname
+    if (host.endsWith('.vercel.app')) return callback(null, true)
+    if (/(\.ngrok-free\.(app|dev)|\.ngrok\.io)$/i.test(host)) return callback(null, true)
+  } catch {
+    /* ignore */
+  }
+  callback(null, false)
+}
+
+const corsOptions = {
+  origin: corsOrigin,
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+}
+
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 

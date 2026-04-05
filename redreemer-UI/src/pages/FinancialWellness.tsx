@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/Toast';
 import Logo from '@/components/Logo';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import LanguageMenu from '@/components/LanguageMenu';
 import DataInsights from '@/components/DataInsights';
 import AIInsightPanel from '@/components/AIInsightPanel';
@@ -77,7 +76,6 @@ export default function FinancialWellness() {
             <p className="text-muted-foreground text-sm mt-1">{t('wellness.subtitle')}</p>
           </div>
           <div className="flex items-center gap-1 shrink-0 self-end sm:self-start">
-            <ThemeToggle />
             <LanguageMenu showCurrentLabel={false} align="right" />
           </div>
         </div>

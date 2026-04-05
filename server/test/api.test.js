@@ -134,6 +134,21 @@ describe('POST /api/ai/insights', () => {
     expect(status).toBe(200)
     expect(body.insights).toHaveProperty('topIssue')
     expect(body.insights).toHaveProperty('score')
+    expect(body).toHaveProperty('analysis')
+  }, 30000)
+
+  it('accepts type as alias for tool', async () => {
+    const { status, body } = await post('/api/ai/insights', {
+      type: 'budget',
+      data: {
+        income: 2000,
+        totalSpent: 1500,
+        categories: [],
+      },
+    })
+    expect(status).toBe(200)
+    expect(body.insights).toBeTruthy()
+    expect(body).toHaveProperty('analysis')
   }, 30000)
 
   it('returns 400 for missing tool', async () => {

@@ -166,8 +166,11 @@ Be specific, warm, and factual. No fluff. Plain text only.`
  */
 router.post('/ai/insights', async (req, res) => {
   try {
-    const { tool, data } = req.body
-    if (!tool || !data) return res.status(400).json({ error: 'tool and data required' })
+    const tool = req.body.tool || req.body.type
+    const { data } = req.body
+    console.log('[AI Insights] request received:', { tool, hasData: !!data })
+    console.log('[AI Insights] GEMINI_API_KEY present:', !!process.env.GEMINI_API_KEY?.trim())
+    if (!tool || !data) return res.status(400).json({ error: 'tool (or type) and data required' })
     if (!process.env.GEMINI_API_KEY?.trim()) {
       return res.status(503).json({ error: 'GEMINI_API_KEY is not set on the API server' })
     }
@@ -227,7 +230,18 @@ Plain text only — no markdown.`
     const rawText = await generateContentWithFallback(genAI, prompt)
     const raw = rawText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
     const parsed = JSON.parse(raw)
-    res.json({ insights: parsed })
+    const analysis =
+      typeof parsed === 'object' && parsed !== null
+        ? String(
+            parsed.summary ||
+              parsed.headline ||
+              parsed.topIssue ||
+              parsed.recommendation ||
+              parsed.topPriority ||
+              JSON.stringify(parsed)
+          )
+        : String(parsed)
+    res.json({ insights: parsed, analysis })
   } catch (err) {
     console.error('POST /api/ai/insights error:', err.message)
     res.status(500).json({ error: err.message })
@@ -332,7 +346,7 @@ router.post('/sms/incoming', twilioSmsWebhook)
 /** On-demand UI translation for i18n — public, rate limited; uses Gemini server-side. */
 const i18nUiLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 12,
+  max: 80,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many translation requests. Try again shortly.' },

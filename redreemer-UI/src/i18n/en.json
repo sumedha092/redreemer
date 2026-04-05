@@ -27,7 +27,10 @@
     "profileMenuSettings": "Settings",
     "profileMenuHelp": "Help",
     "language": "Language",
-    "translating": "Translating…"
+    "translating": "Translating…",
+    "translationLoaded": "Interface language updated.",
+    "translationFailed": "Could not load translations. Run the API (e.g. ngrok → port 3001), set GEMINI_API_KEY on the server, and use VITE_API_URL=/api/p on Vercel with API_UPSTREAM_ORIGIN. Staying in English.",
+    "translationDemoHint": "Demo: pick a language → the app calls your API to translate all labels (Gemini). First load may take ~15–30s; later loads use cache."
   },
   "nav": {
     "howItWorks": "How it works",

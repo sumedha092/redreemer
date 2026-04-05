@@ -73,6 +73,9 @@ export default function LanguageMenu({ className = '', showCurrentLabel = true, 
               {language === code && <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />}
             </button>
           ))}
+          <p className="px-3 py-2 text-[11px] leading-snug text-gray-500 border-t border-gray-100">
+            {t('shell.translationDemoHint')}
+          </p>
         </div>
       )}
     </div>

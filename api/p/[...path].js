@@ -10,6 +10,30 @@
 
 export const config = { runtime: 'edge' }
 
+/**
+ * Browser: /api/p/clients/… → upstream must be /api/clients/…
+ * Legacy: /api/p/api/clients/… → normalize to /api/clients/…
+ */
+function upstreamPathAndSearch(url) {
+  const u = new URL(url)
+  let pathname = u.pathname.replace(/^\/api\/p/, '') || '/'
+  if (pathname.startsWith('/api/')) {
+    pathname = pathname.slice(4)
+  }
+  const pathOnly = pathname.split('?')[0]
+  if (
+    pathOnly !== '/' &&
+    pathOnly !== '' &&
+    !pathOnly.startsWith('/api') &&
+    !pathOnly.startsWith('/sms') &&
+    !pathOnly.startsWith('/clips') &&
+    pathOnly !== '/health'
+  ) {
+    pathname = '/api' + (pathOnly.startsWith('/') ? pathOnly : '/' + pathOnly)
+  }
+  return pathname + (u.search || '')
+}
+
 export default async function handler(request) {
   if (request.method === 'OPTIONS') {
     const reqHdr = request.headers.get('Access-Control-Request-Headers') || ''
@@ -34,8 +58,7 @@ export default async function handler(request) {
     })
   }
 
-  const u = new URL(request.url)
-  const rest = (u.pathname.replace(/^\/api\/p/, '') || '/') + u.search
+  const rest = upstreamPathAndSearch(request.url)
   const target = `${upstream}${rest}`
 
   const headers = new Headers()

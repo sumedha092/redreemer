@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Logo from '@/components/Logo';
 import LanguageMenu from '@/components/LanguageMenu';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Navbar() {
   const { t } = useTranslation();
@@ -18,7 +17,7 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'backdrop-blur-xl border-b border-border bg-background/90 dark:bg-background/95' : ''}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'backdrop-blur-xl border-b border-border bg-white/90' : ''}`}>
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Logo size="md" />
@@ -29,7 +28,6 @@ export default function Navbar() {
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2">
-          <ThemeToggle className="text-muted-foreground" />
           <LanguageMenu showCurrentLabel={false} className="text-muted-foreground" align="right" />
           <button type="button" onClick={() => navigate('/login')} className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
             {t('nav.signIn')}
